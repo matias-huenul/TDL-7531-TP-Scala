@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="ivy-report.xsl"?>
+<ivy-report version="1.0">
+	<info
+		organisation="com.example"
+		module="sample_2.12"
+		revision="0.1.0-SNAPSHOT"
+		conf="compile-internal"
+		confs="compile, runtime, test, provided, optional, compile-internal, runtime-internal, test-internal, plugin, pom, scala-tool"
+		date="20230511040353"/>
+	<dependencies>
+		<module organisation="org.json4s" name="json4s-native_2.12">
+			<revision name="3.6.7" status="release" pubdate="20190626232631" resolver="public" artresolver="public" homepage="https://github.com/json4s/json4s" downloaded="true" searched="true" default="false" conf="default, compile, runtime, default(compile), master" position="2">
+				<license name="Apache-2.0" url="http://www.apache.org/licenses/LICENSE-2.0"/>
+				<metadata-artifact status="successful" details="" size="1827" time="599" location="/home/docker/.ivy2/cache/org.json4s/json4s-native_2.12/ivy-3.6.7.xml" searched="true" original-local-location="/home/docker/.ivy2/cache/org.json4s/json4s-native_2.12/ivy-3.6.7.xml.original" origin-is-local="false" origin-location="https://repo1.maven.org/maven2/org/json4s/json4s-native_2.12/3.6.7/json4s-native_2.12-3.6.7.pom"/>
+				<caller organisation="com.example" name="sample_2.12" conf="compile-internal, compile, provided, optional" rev="3.6.7" rev-constraint-default="3.6.7" rev-constraint-dynamic="3.6.7" callerrev="0.1.0-SNAPSHOT"/>
+				<artifacts>
+					<artifact name="json4s-native_2.12" type="jar" ext="jar" status="successful" details="" size="93279" time="616" location="/home/docker/.ivy2/cache/org.json4s/json4s-native_2.12/jars/json4s-native_2.12-3.6.7.jar">
+						<origin-location is-local="false" location="https://repo1.maven.org/maven2/org/json4s/json4s-native_2.12/3.6.7/json4s-native_2.12-3.6.7.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.json4s" name="json4s-core_2.12">
+			<revision name="3.6.7" status="release" pubdate="20190626232709" resolver="public" artresolver="public" homepage="https://github.com/json4s/json4s" downloaded="true" searched="true" default="false" conf="compile, runtime(*), master(compile), runtime, compile(*), master" position="3">
+				<license name="Apache-2.0" url="http://www.apache.org/licenses/LICENSE-2.0"/>
+				<metadata-artifact status="successful" details="" size="2181" time="573" location="/home/docker/.ivy2/cache/org.json4s/json4s-core_2.12/ivy-3.6.7.xml" searched="true" original-local-location="/home/docker/.ivy2/cache/org.json4s/json4s-core_2.12/ivy-3.6.7.xml.original" origin-is-local="false" origin-location="https://repo1.maven.org/maven2/org/json4s/json4s-core_2.12/3.6.7/json4s-core_2.12-3.6.7.pom"/>
+				<caller organisation="org.json4s" name="json4s-native_2.12" conf="default, compile, runtime, master" rev="3.6.7" rev-constraint-default="3.6.7" rev-constraint-dynamic="3.6.7" callerrev="3.6.7"/>
+				<artifacts>
+					<artifact name="json4s-core_2.12" type="jar" ext="jar" status="successful" details="" size="489567" time="635" location="/home/docker/.ivy2/cache/org.json4s/json4s-core_2.12/jars/json4s-core_2.12-3.6.7.jar">
+						<origin-location is-local="false" location="https://repo1.maven.org/maven2/org/json4s/json4s-core_2.12/3.6.7/json4s-core_2.12-3.6.7.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="com.thoughtworks.paranamer" name="paranamer">
+			<revision name="2.8" status="release" pubdate="20150826112928" resolver="public" artresolver="public" homepage="" downloaded="true" searched="true" default="false" conf="compile, runtime(*), master(compile), runtime, compile(*), master" position="6">
+				<license name="BSD" url="LICENSE.txt"/>
+				<metadata-artifact status="successful" details="" size="5274" time="604" location="/home/docker/.ivy2/cache/com.thoughtworks.paranamer/paranamer/ivy-2.8.xml" searched="true" original-local-location="/home/docker/.ivy2/cache/com.thoughtworks.paranamer/paranamer/ivy-2.8.xml.original" origin-is-local="false" origin-location="https://repo1.maven.org/maven2/com/thoughtworks/paranamer/paranamer/2.8/paranamer-2.8.pom"/>
+				<caller organisation="org.json4s" name="json4s-core_2.12" conf="compile, runtime" rev="2.8" rev-constraint-default="2.8" rev-constraint-dynamic="2.8" callerrev="3.6.7"/>
+				<artifacts>
+					<artifact name="paranamer" type="bundle" ext="jar" status="successful" details="" size="34654" time="753" location="/home/docker/.ivy2/cache/com.thoughtworks.paranamer/paranamer/bundles/paranamer-2.8.jar">
+						<origin-location is-local="false" location="https://repo1.maven.org/maven2/com/thoughtworks/paranamer/paranamer/2.8/paranamer-2.8.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.json4s" name="json4s-scalap_2.12">
+			<revision name="3.6.7" status="release" pubdate="20190626232846" resolver="public" artresolver="public" homepage="https://github.com/json4s/json4s" downloaded="true" searched="true" default="false" conf="compile, runtime(*), master(compile), runtime, compile(*), master" position="5">
+				<license name="Apache-2.0" url="http://www.apache.org/licenses/LICENSE-2.0"/>
+				<metadata-artifact status="successful" details="" size="1651" time="576" location="/home/docker/.ivy2/cache/org.json4s/json4s-scalap_2.12/ivy-3.6.7.xml" searched="true" original-local-location="/home/docker/.ivy2/cache/org.json4s/json4s-scalap_2.12/ivy-3.6.7.xml.original" origin-is-local="false" origin-location="https://repo1.maven.org/maven2/org/json4s/json4s-scalap_2.12/3.6.7/json4s-scalap_2.12-3.6.7.pom"/>
+				<caller organisation="org.json4s" name="json4s-core_2.12" conf="compile, runtime" rev="3.6.7" rev-constraint-default="3.6.7" rev-constraint-dynamic="3.6.7" callerrev="3.6.7"/>
+				<artifacts>
+					<artifact name="json4s-scalap_2.12" type="jar" ext="jar" status="successful" details="" size="349025" time="632" location="/home/docker/.ivy2/cache/org.json4s/json4s-scalap_2.12/jars/json4s-scalap_2.12-3.6.7.jar">
+						<origin-location is-local="false" location="https://repo1.maven.org/maven2/org/json4s/json4s-scalap_2.12/3.6.7/json4s-scalap_2.12-3.6.7.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.json4s" name="json4s-ast_2.12">
+			<revision name="3.6.7" status="release" pubdate="20190626232450" resolver="public" artresolver="public" homepage="https://github.com/json4s/json4s" downloaded="true" searched="true" default="false" conf="compile, runtime(*), master(compile), runtime, compile(*), master" position="4">
+				<license name="Apache-2.0" url="http://www.apache.org/licenses/LICENSE-2.0"/>
+				<metadata-artifact status="successful" details="" size="1642" time="578" location="/home/docker/.ivy2/cache/org.json4s/json4s-ast_2.12/ivy-3.6.7.xml" searched="true" original-local-location="/home/docker/.ivy2/cache/org.json4s/json4s-ast_2.12/ivy-3.6.7.xml.original" origin-is-local="false" origin-location="https://repo1.maven.org/maven2/org/json4s/json4s-ast_2.12/3.6.7/json4s-ast_2.12-3.6.7.pom"/>
+				<caller organisation="org.json4s" name="json4s-core_2.12" conf="compile, runtime" rev="3.6.7" rev-constraint-default="3.6.7" rev-constraint-dynamic="3.6.7" callerrev="3.6.7"/>
+				<artifacts>
+					<artifact name="json4s-ast_2.12" type="jar" ext="jar" status="successful" details="" size="83633" time="615" location="/home/docker/.ivy2/cache/org.json4s/json4s-ast_2.12/jars/json4s-ast_2.12-3.6.7.jar">
+						<origin-location is-local="false" location="https://repo1.maven.org/maven2/org/json4s/json4s-ast_2.12/3.6.7/json4s-ast_2.12-3.6.7.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scalaj" name="scalaj-http_2.12">
+			<revision name="2.4.2" status="release" pubdate="20190615170311" resolver="public" artresolver="public" homepage="http://github.com/scalaj/scalaj-http" downloaded="true" searched="true" default="false" conf="default, compile, runtime, default(compile), master" position="1">
+				<license name="Apache 2" url="http://www.apache.org/licenses/LICENSE-2.0"/>
+				<metadata-artifact status="successful" details="" size="2716" time="579" location="/home/docker/.ivy2/cache/org.scalaj/scalaj-http_2.12/ivy-2.4.2.xml" searched="true" original-local-location="/home/docker/.ivy2/cache/org.scalaj/scalaj-http_2.12/ivy-2.4.2.xml.original" origin-is-local="false" origin-location="https://repo1.maven.org/maven2/org/scalaj/scalaj-http_2.12/2.4.2/scalaj-http_2.12-2.4.2.pom"/>
+				<caller organisation="com.example" name="sample_2.12" conf="compile-internal, compile, provided, optional" rev="2.4.2" rev-constraint-default="2.4.2" rev-constraint-dynamic="2.4.2" callerrev="0.1.0-SNAPSHOT"/>
+				<artifacts>
+					<artifact name="scalaj-http_2.12" type="jar" ext="jar" status="successful" details="" size="126382" time="620" location="/home/docker/.ivy2/cache/org.scalaj/scalaj-http_2.12/jars/scalaj-http_2.12-2.4.2.jar">
+						<origin-location is-local="false" location="https://repo1.maven.org/maven2/org/scalaj/scalaj-http_2.12/2.4.2/scalaj-http_2.12-2.4.2.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scala-lang" name="scala-library">
+			<revision name="2.12.8" status="release" pubdate="20181204101556" resolver="public" artresolver="public" homepage="http://www.scala-lang.org/" extra-info.apiURL="http://www.scala-lang.org/api/2.12.8/" downloaded="true" searched="true" default="false" conf="default, compile, runtime(*), master(compile), runtime, default(compile), compile(*), master" position="0">
+				<license name="Apache-2.0" url="https://www.apache.org/licenses/LICENSE-2.0"/>
+				<metadata-artifact status="successful" details="" size="1597" time="574" location="/home/docker/.ivy2/cache/org.scala-lang/scala-library/ivy-2.12.8.xml" searched="true" original-local-location="/home/docker/.ivy2/cache/org.scala-lang/scala-library/ivy-2.12.8.xml.original" origin-is-local="false" origin-location="https://repo1.maven.org/maven2/org/scala-lang/scala-library/2.12.8/scala-library-2.12.8.pom"/>
+				<caller organisation="com.example" name="sample_2.12" conf="compile-internal, compile, provided, optional" rev="2.12.8" rev-constraint-default="2.12.8" rev-constraint-dynamic="2.12.8" callerrev="0.1.0-SNAPSHOT"/>
+				<caller organisation="org.json4s" name="json4s-ast_2.12" conf="compile, runtime" rev="2.12.8" rev-constraint-default="2.12.8" rev-constraint-dynamic="2.12.8" callerrev="3.6.7"/>
+				<caller organisation="org.json4s" name="json4s-native_2.12" conf="default, compile, runtime, master" rev="2.12.8" rev-constraint-default="2.12.8" rev-constraint-dynamic="2.12.8" callerrev="3.6.7"/>
+				<caller organisation="org.scalaj" name="scalaj-http_2.12" conf="default, compile, runtime, master" rev="2.12.8" rev-constraint-default="2.12.8" rev-constraint-dynamic="2.12.8" callerrev="2.4.2"/>
+				<caller organisation="org.json4s" name="json4s-core_2.12" conf="compile, runtime" rev="2.12.8" rev-constraint-default="2.12.8" rev-constraint-dynamic="2.12.8" callerrev="3.6.7"/>
+				<caller organisation="org.json4s" name="json4s-scalap_2.12" conf="compile, runtime" rev="2.12.8" rev-constraint-default="2.12.8" rev-constraint-dynamic="2.12.8" callerrev="3.6.7"/>
+				<artifacts>
+					<artifact name="scala-library" type="jar" ext="jar" status="successful" details="" size="5272591" time="788" location="/home/docker/.ivy2/cache/org.scala-lang/scala-library/jars/scala-library-2.12.8.jar">
+						<origin-location is-local="false" location="https://repo1.maven.org/maven2/org/scala-lang/scala-library/2.12.8/scala-library-2.12.8.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+	</dependencies>
+</ivy-report>

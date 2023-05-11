@@ -1,0 +1,13 @@
+[0m[[0m[31merror[0m] [0m[0m/home/docker/app/sample/src/main/scala/example/Hello.scala:3:8: not found: object scalaj[0m
+[0m[[0m[31merror[0m] [0m[0mimport scalaj.http.Http[0m
+[0m[[0m[31merror[0m] [0m[0m       ^[0m
+[0m[[0m[31merror[0m] [0m[0m/home/docker/app/sample/src/main/scala/example/Hello.scala:5:12: object json4s is not a member of package org[0m
+[0m[[0m[31merror[0m] [0m[0mimport org.json4s.native.JsonMethods.parse[0m
+[0m[[0m[31merror[0m] [0m[0m           ^[0m
+[0m[[0m[31merror[0m] [0m[0m/home/docker/app/sample/src/main/scala/example/Hello.scala:9:18: not found: value Http[0m
+[0m[[0m[31merror[0m] [0m[0m  val response = Http("https://dummyjson.com/products/1").asString.body[0m
+[0m[[0m[31merror[0m] [0m[0m                 ^[0m
+[0m[[0m[31merror[0m] [0m[0m/home/docker/app/sample/src/main/scala/example/Hello.scala:10:11: not found: value parse[0m
+[0m[[0m[31merror[0m] [0m[0m  println(parse(response).toString())[0m
+[0m[[0m[31merror[0m] [0m[0m          ^[0m
+[0m[[0m[31merror[0m] [0m[0mfour errors found[0m
