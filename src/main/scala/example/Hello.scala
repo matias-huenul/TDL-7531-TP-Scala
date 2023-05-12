@@ -2,14 +2,27 @@ package example
 
 import scalaj.http.Http
 import scala.io.Source
+import org.json4s.{DefaultFormats, Formats, JValue}
 import org.json4s.native.JsonMethods.parse
 
-object Hello extends Greeting with App {
-  println(greeting)
-  val response = Http("https://dummyjson.com/products/1").asString.body
-  println(parse(response).toString())
-}
+object Hello extends App {
+  implicit val formats: Formats = DefaultFormats
 
-trait Greeting {
-  lazy val greeting: String = "Hello! This is a sample project."
+  val response: String = Http("https://dummyjson.com/products/1").asString.body
+  val json: JValue = parse(response)
+
+  val title: String = (json \ "title").extract[String]
+  val firstImage: String = (json \ "images")(0).extract[String]
+
+  println(s"The title is $title")
+  println(s"The first image is $firstImage")
+
+  val images: List[String] = (json \ "images").extract[List[String]]
+
+  println(s"The second image is ${images(1)}")
+  println(s"The last image is ${images.last}")
+
+  for (image <- images) {
+    println(s"Image: $image")
+  }
 }
