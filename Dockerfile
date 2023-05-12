@@ -24,7 +24,6 @@ RUN curl -s "https://get.sdkman.io" | bash
 
 SHELL ["/bin/bash", "-c"]
 RUN source "$HOME/.sdkman/bin/sdkman-init.sh" && sdk install sbt
-# RUN sdk install sbt
 
 WORKDIR $HOME/app
 
