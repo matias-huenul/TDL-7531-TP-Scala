@@ -6,6 +6,8 @@ import org.json4s.{DefaultFormats, Formats, JValue}
 import org.json4s.native.JsonMethods.parse
 import org.apache.spark.sql.{SparkSession, DataFrame}
 
+import example.utils.Utils
+
 object Hello extends App {
   implicit val formats: Formats = DefaultFormats
 
@@ -36,4 +38,6 @@ object Hello extends App {
   val df: DataFrame = spark.createDataFrame(data).toDF("id", "code")
 
   df.show()
+
+  Utils.test()
 }
