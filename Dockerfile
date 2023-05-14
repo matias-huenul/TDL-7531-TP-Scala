@@ -20,6 +20,9 @@ USER $USER_NAME
 ENV SCALA_HOME=/usr/share/scala
 ENV PATH=$PATH:$SCALA_HOME/bin
 
+RUN curl -o spark-3.4.0-bin-hadoop3.tgz https://dlcdn.apache.org/spark/spark-3.4.0/spark-3.4.0-bin-hadoop3.tgz
+RUN tar -xzf spark-3.4.0-bin-hadoop3.tgz && rm spark-3.4.0-bin-hadoop3.tgz
+
 RUN curl -s "https://get.sdkman.io" | bash
 
 SHELL ["/bin/bash", "-c"]

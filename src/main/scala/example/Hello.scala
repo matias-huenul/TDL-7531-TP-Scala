@@ -4,6 +4,7 @@ import scalaj.http.Http
 import scala.io.Source
 import org.json4s.{DefaultFormats, Formats, JValue}
 import org.json4s.native.JsonMethods.parse
+import org.apache.spark.sql.{SparkSession, DataFrame}
 
 object Hello extends App {
   implicit val formats: Formats = DefaultFormats
@@ -25,4 +26,14 @@ object Hello extends App {
   for (image <- images) {
     println(s"Image: $image")
   }
+
+  val spark = SparkSession.builder()
+    .appName("Example")
+    .master("local[*]")
+    .getOrCreate()
+
+  val data = Seq((1, "a"), (2, "b"), (3, "c"))
+  val df: DataFrame = spark.createDataFrame(data).toDF("id", "code")
+
+  df.show()
 }
