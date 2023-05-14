@@ -27,12 +27,12 @@ object Hello extends App {
     println(s"Image: $image")
   }
 
-  val spark = SparkSession.builder()
+  val spark: SparkSession = SparkSession.builder()
     .appName("Example")
     .master("local[*]")
     .getOrCreate()
 
-  val data = Seq((1, "a"), (2, "b"), (3, "c"))
+  val data: Seq[(Int, String)] = Seq((1, "a"), (2, "b"), (3, "c"))
   val df: DataFrame = spark.createDataFrame(data).toDF("id", "code")
 
   df.show()
