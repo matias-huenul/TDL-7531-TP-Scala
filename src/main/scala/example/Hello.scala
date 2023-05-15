@@ -40,4 +40,6 @@ object Hello extends App {
   df.show()
 
   Utils.test()
+
+  println("hello world")
 }
