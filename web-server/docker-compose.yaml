@@ -1,5 +1,5 @@
 services:
-  scala:
+  server:
     build:
       context: .
       args:
@@ -7,7 +7,9 @@ services:
         GROUP_NAME: docker
         USER_ID: ${UID}
         GROUP_ID: ${GID}
-    hostname: scala
+    # hostname: server
+    ports:
+      - 8080:8080
     volumes:
       - .:/home/docker/app
     user: ${UID}:${GID}

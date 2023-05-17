@@ -30,4 +30,6 @@ RUN source "$HOME/.sdkman/bin/sdkman-init.sh" && sdk install sbt
 
 WORKDIR $HOME/app
 
+EXPOSE 8080
+
 CMD ["tail", "-f", "/dev/null"]
