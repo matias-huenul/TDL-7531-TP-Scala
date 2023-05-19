@@ -12,6 +12,9 @@ lazy val root = (project in file("."))
     libraryDependencies += "org.json4s" %% "json4s-native" % "3.6.7",
     libraryDependencies += "org.apache.spark" %% "spark-core" % "3.4.0" % "provided",
     libraryDependencies += "org.apache.spark" %% "spark-sql" % "3.4.0" % "provided",
+    //ad dependencies for java.io.FileOutputStream and java.net.URL
+    libraryDependencies += "org.apache.commons" % "commons-io" % "1.3.2",
+
   )
 
 assemblyMergeStrategy in assembly := {

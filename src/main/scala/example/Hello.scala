@@ -39,6 +39,8 @@ object Hello extends App {
 
   df.show()
 
+  PropertiesReader.read_csv("./ar_properties.csv")
+
   Utils.test()
 
   println("hello world")
