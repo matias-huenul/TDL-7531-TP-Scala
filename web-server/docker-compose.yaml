@@ -8,6 +8,8 @@ services:
         USER_ID: ${UID}
         GROUP_ID: ${GID}
     # hostname: server
+    environment:
+      - TELEGRAM_API_TOKEN=${TELEGRAM_API_TOKEN}
     ports:
       - 8080:8080
     volumes:
