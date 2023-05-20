@@ -1,4 +1,4 @@
-package example.utils
+package example.lib
 
 import akka.actor.ActorSystem
 import org.json4s._
@@ -9,12 +9,25 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
 
-object Utils {
-  implicit val system = ActorSystem("utils")
+object Commands {
+  implicit val system = ActorSystem("commands")
   implicit val formats: Formats = DefaultFormats
 
-  case class TelegramMessage(chat_id: String, text: String)
+  /** Handle a message and return a response.
+    *
+    * @param text The text of the message to handle.
+    * @return The response to the message.
+    */
+  def handleMessage(text: String): String = {
+    val (command, args) = parseMessage(text)
+    handleCommand(command, args)
+  }
 
+  /** Parse a message content.
+    *
+    * @param text The text of the message to parse.
+    * @return A tuple containing the command and the arguments of the message.
+    */
   def parseMessage(text: String): (String, Map[String, String]) = {
     val commandPattern = """^/(\w+)(\s+\w+=\w+[,\s*\w+=\w+]*)*""".r
 
@@ -23,7 +36,10 @@ object Utils {
         val argMap = Option(args) match {
           case Some(argsString) =>
             val argList = argsString.split(",").map(_.trim)
-            argList.map(_.split("=")).collect { case Array(key, value) => key -> value }.toMap
+            argList
+              .map(_.split("="))
+              .collect { case Array(key, value) => key -> value }
+              .toMap
           case None => Map.empty[String, String]
         }
         (command, argMap)
@@ -32,6 +48,25 @@ object Utils {
     }
   }
 
+  /** Handle a command and return a response.
+    *
+    * @param command The command to handle.
+    * @param args The arguments of the command.
+    * @return The response to the command.
+    */
+  def handleCommand(command: String, args: Map[String, String]): String = {
+    command match {
+      case "buscar" => searchProperties(args)
+      case "tasar" => estimatePropertyValue(args)
+      case "ayuda" => help()
+      case _ => greet()
+    }
+  }
+
+  /** Return a greeting message.
+    *
+    * @return The greeting message.
+    */
   def greet(): String = {
     """¡Hola!
       |
@@ -40,6 +75,10 @@ object Utils {
       |Escribí /ayuda para obtener información sobre los comandos disponibles""".stripMargin
   }
 
+  /** Return a help message.
+    *
+    * @return The help message.
+    */
   def help(): String = {
     """Los comandos disponibles son:
       |
@@ -60,6 +99,11 @@ object Utils {
       |    /tasar ubicacion=Palermo, tipo=departamento, superficie=50""".stripMargin
   }
 
+  /** Search properties.
+    *
+    * @param args The arguments of the command.
+    * @return The response to the command.
+    */
   def searchProperties(args: Map[String, String]): String = {
     val location = args.getOrElse("ubicacion", "")
     val propertyType = args.getOrElse("tipo", "")
@@ -73,6 +117,11 @@ object Utils {
     message
   }
 
+  /** Estimate the value of a property.
+    *
+    * @param args The arguments of the command.
+    * @return The response to the command.
+    */
   def estimatePropertyValue(args: Map[String, String]): String = {
     val propertyType = args.getOrElse("tipo", "")
     val location = args.getOrElse("ubicacion", "")
@@ -84,25 +133,5 @@ object Utils {
         |Tamaño: $propertySize""".stripMargin
 
     message
-  }
-
-  def handleCommand(command: String, args: Map[String, String]): String = {
-    command match {
-      case "buscar" => searchProperties(args)
-      case "tasar" => estimatePropertyValue(args)
-      case "ayuda" => help()
-      case _ => greet()
-    }
-  }
-
-  def sendMessage(chatId: String, text: String)(implicit mat: Materializer): Future[HttpResponse] = {
-    val telegramApiKey = sys.env("TELEGRAM_API_TOKEN")
-    val message = TelegramMessage(chatId, text)
-    val telegramRequest = HttpRequest(
-      method = HttpMethods.POST,
-      uri = s"https://api.telegram.org/bot$telegramApiKey/sendMessage",
-      entity = HttpEntity(ContentTypes.`application/json`, write(message))
-    )
-    Http().singleRequest(telegramRequest)
   }
 }
