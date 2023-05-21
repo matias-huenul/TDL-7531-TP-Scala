@@ -39,6 +39,8 @@ object Hello extends App {
 
   df.show()
 
+  PropertiesReader.propertiesDataUpdate()
+
   Utils.test()
 
   println("hello world")

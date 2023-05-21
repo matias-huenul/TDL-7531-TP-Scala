@@ -2,30 +2,84 @@ package example
 
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.functions.col
-import org.apache.spark.sql.functions.{lower, regexp_extract, regexp_replace, substring_index, when, concat, lit}
+import org.apache.spark.sql.functions.{col, concat, lit, lower, regexp_extract, regexp_replace, substring_index, when, max}
 import org.apache.spark.sql.types.{FloatType, IntegerType, StringType}
+
 import java.io.FileOutputStream
 import java.net.URL
-import java.nio.file.{Paths, Files}
+import java.nio.file.{Files, Paths}
 
 object PropertiesReader {
+  def jdbcMode(overwrite: Boolean): String = if (overwrite) "overwrite" else "append"
+  def propertiesDataUpdate(overwrite: Boolean = false): Unit = {
+    val spark: SparkSession = SparkSession.builder()
+      .appName("Example")
+      .master("local[*]")
+      .getOrCreate()
 
-  def read_csv(path: String)= {
+    val csv = List(("https://gitlab.com/mpata2000/datos_tdl/-/raw/main/ar_properties.csv", "ar_properties_2020_2021.csv"))
+    val uploadedCsv: DataFrame = spark.read
+      .format("jdbc")
+      .option("driver", "org.postgresql.Driver")
+      .option("url", "jdbc:postgresql://db.igdnlrrqfnwivrfldsyy.supabase.co:5432/postgres")
+      .option("dbtable", "csv")
+      .option("user", "postgres")
+      .option("password", "+?gZMK.KFtxC@3x")
+      .load()
+
+
+
+    csv.foreach(x => {
+      val url = x._1
+      val outputPath = x._2
+
+      if (overwrite || uploadedCsv.withColumn("link", lower(col("link"))).filter(col("link") === url).count() == 0) {
+        val properties = read_csv(url, outputPath)
+        val maxId: Int = uploadedCsv.agg(max("id")).head().getInt(0)
+        val values: Seq[(Int, String, String)] = Seq((maxId+1, url, outputPath))
+        val df = spark.createDataFrame(values).toDF("id","link", "file_name")
+
+        val union = uploadedCsv.unionByName(df,allowMissingColumns = true)
+        union.write
+          .format("jdbc")
+          .mode(jdbcMode(overwrite))
+          .option("driver", "org.postgresql.Driver")
+          .option("url", "jdbc:postgresql://db.igdnlrrqfnwivrfldsyy.supabase.co:5432/postgres")
+          .option("dbtable", "csv")
+          .option("user", "postgres")
+          .option("password", "+?gZMK.KFtxC@3x")
+          .save()
+
+        properties.write
+          .format("jdbc")
+          .mode(jdbcMode(overwrite))
+          .option("driver", "org.postgresql.Driver")
+          .option("url", "jdbc:postgresql://db.igdnlrrqfnwivrfldsyy.supabase.co:5432/postgres")
+          .option("dbtable", "properties")
+          .option("user", "postgres")
+          .option("password", "+?gZMK.KFtxC@3x")
+          .save()
+      }else{
+        println("File already uploaded")
+      }
+    })
+  }
+
+  def read_csv(url: String, path: String): DataFrame = {
     val spark: SparkSession = SparkSession.builder()
       .appName("Example")
       .master("local[*]")
       .getOrCreate()
     import spark.implicits._
 
-    if (!Files.exists(Paths.get("./ar_properties.csv"))){
+    val outPath = "./" + path
+
+    if (!Files.exists(Paths.get(outPath))) {
       println("Downloading file...")
-      val url = "https://gitlab.com/mpata2000/datos_tdl/-/raw/main/ar_properties.csv"
-      val outputPath = "ar_properties.csv" // Replace with the desired output file path
 
       try {
         val inputStream = new URL(url).openStream()
-        val outputStream = new FileOutputStream(outputPath)
+        val outputStream = new FileOutputStream(outPath)
         val buffer = new Array[Byte](1024)
         var bytesRead = inputStream.read(buffer)
 
@@ -42,9 +96,9 @@ object PropertiesReader {
       }
     }
 
-    val df: DataFrame = spark.read
+    val df = spark.read
       .option("header", "true")
-      .csv("./ar_properties.csv")
+      .csv(outPath)
 
 
     // Filter by l2 = Capital Federal, currency = USD or ARS, price is not null, property_type = Departamento, PH, Casa
@@ -70,7 +124,7 @@ object PropertiesReader {
         when($"rooms".isNull && col(column).contains("mono"), 1)
           .otherwise(when($"rooms".isNull && lower(col(column)).contains("amb"),
             substring_index(regexp_extract(lower(col(column)), "\\d+ amb", 0), " ", 1).cast(IntegerType))
-          .otherwise($"rooms"))
+            .otherwise($"rooms"))
       )
     }
 
@@ -80,14 +134,6 @@ object PropertiesReader {
     val finalDF = updatedDF.drop("id", "ad_type", "start_date", "end_date", "lat", "lon", "l1", "l2", "l4", "l5", "l6", "price_period", "title", "description")
 
     // Write to postgres
-    finalDF.write
-      .format("jdbc")
-      .mode("overwrite")
-      .option("driver", "org.postgresql.Driver")
-      .option("url", "jdbc:postgresql://db.igdnlrrqfnwivrfldsyy.supabase.co:5432/postgres")
-      .option("dbtable", "properties")
-      .option("user", "postgres")
-      .option("password", "+?gZMK.KFtxC@3x")
-      .save()
+    finalDF
   }
 }
