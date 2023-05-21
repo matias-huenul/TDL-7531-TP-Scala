@@ -31,17 +31,19 @@ object PropertiesReader {
       val url = x._1
       val outputPath = x._2
 
-      // Check if file is already uploaded
+      // Check if file is already uploaded or if it should be overwritten
       if (overwrite || uploadedCsv.withColumn("link", lower(col("link"))).filter(col("link") === url).count() == 0) {
         val properties = read_csv(url, outputPath)
 
-
-        // TODO: Chek if id is not needed, maybe use link as primary key. Add created_at!
+        // TODO: Check if id is not needed, maybe use link as primary key.
+        //      Add created_at!
         val maxId: Int = uploadedCsv.agg(max("id")).head().getInt(0)
         val values: Seq[(Int, String, String)] = Seq((maxId+1, url, outputPath))
         val df = spark.createDataFrame(values).toDF("id","link", "file_name")
         val union = uploadedCsv.unionByName(df,allowMissingColumns = true)
 
+        // If it in overwrite only the first file should overwrite the table then append the rest
+        // Dont know if this work with more than 1 files
         val mode: String = if (overwrite && (csv.indexOf(x) == 0)) "overwrite" else "append"
 
         union.write.format("jdbc").mode(mode).option("driver", "org.postgresql.Driver")
@@ -72,8 +74,10 @@ object PropertiesReader {
       .getOrCreate()
     import spark.implicits._
 
+    //TODO: improve path, ./files/ + path?
     val outPath = "./" + path
 
+    // TODO: Create new function to download file
     if (!Files.exists(Paths.get(outPath))) {
       println("Downloading file...")
 
@@ -99,7 +103,6 @@ object PropertiesReader {
     val df = spark.read
       .option("header", "true")
       .csv(outPath)
-
 
     // Filter by l2 = Capital Federal, currency = USD or ARS, price is not null, property_type = Departamento, PH, Casa
     val filteredDF = df.filter($"l2" === "Capital Federal" && $"currency".isin("USD", "ARS") && $"price".isNotNull && $"property_type".isin("Departamento", "PH", "Casa"))
@@ -129,12 +132,12 @@ object PropertiesReader {
     }
 
     // TODO: Search for bathrooms and rooms?
-    // TODO: Rename columns
+    // TODO: Rename columns (eg l2 -> city?)
+    // TODO: Check schema for db, everything is string now
 
     //Drop unnecessary columns
     val finalDF = updatedDF.drop("id", "ad_type", "start_date", "end_date", "lat", "lon", "l1", "l2", "l4", "l5", "l6", "price_period", "title", "description")
 
-    // Write to postgres
     finalDF
   }
 }
