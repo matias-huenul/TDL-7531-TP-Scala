@@ -44,4 +44,15 @@ object Hello extends App {
   Utils.test()
 
   println("hello world")
+
+  val a = spark.read
+    .format("jdbc")
+    .option("driver", "org.postgresql.Driver")
+    .option("url", "jdbc:postgresql://db.igdnlrrqfnwivrfldsyy.supabase.co:5432/postgres")
+    .option("dbtable", "properties")
+    .option("user", "postgres")
+    .option("password", "+?gZMK.KFtxC@3x")
+    .load()
+
+  a.show()
 }

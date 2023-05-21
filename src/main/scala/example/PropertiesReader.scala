@@ -77,12 +77,14 @@ object PropertiesReader {
     //df.drop(columns=['id', 'ad_type', 'start_date', 'end_date','lat', 'lon', 'l1', 'l2', 'l4', 'l5', 'l6', 'price_period','title', 'description'])
     val finalDF = updatedDF.drop("id", "ad_type", "start_date", "end_date", "lat", "lon", "l1", "l2", "l4", "l5", "l6", "price_period", "title", "description")
 
-    finalDF.show()
-
-    // print porcentage of nulls in surface_total
-    val total = finalDF.count()
-    val nulls = finalDF.filter($"surface_total".isNull).count()
-    val porcentage = nulls * 100 / total
-    println(s"Porcentage of nulls in surface_total: $porcentage")
+    finalDF.write
+      .format("jdbc")
+      .mode("overwrite")
+      .option("driver", "org.postgresql.Driver")
+      .option("url", "jdbc:postgresql://db.igdnlrrqfnwivrfldsyy.supabase.co:5432/postgres")
+      .option("dbtable", "properties")
+      .option("user", "postgres")
+      .option("password", "+?gZMK.KFtxC@3x")
+      .save()
   }
 }
