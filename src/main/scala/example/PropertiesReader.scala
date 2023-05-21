@@ -50,12 +50,12 @@ object PropertiesReader {
     // Filter by l2 = Capital Federal, currency = USD or ARS, price is not null, property_type = Departamento, PH, Casa
     val filteredDF = df.filter($"l2" === "Capital Federal" && $"currency".isin("USD", "ARS") && $"price".isNotNull && $"property_type".isin("Departamento", "PH", "Casa"))
 
-    //df["direccion"] = df["lat"].astype(str)+", "+df["lon"].astype(str)
+    // Create a new column with the concatenation of lat and lon
     val dfWithDir = filteredDF.withColumn("direccion", concat($"lat".cast(StringType), lit(","), $"lon".cast(StringType)))
-    //df["description"] = df["description"].str.replace("\n"," ")
+    //Clean description column
     val dfCleanDesc = dfWithDir.withColumn("description", regexp_replace($"description", "\n", " "))
 
-    val pattern = "(\\d+)\\s*m\\s*2?"
+    val pattern = "(\\d+)\\s*m\\s*2?" // Should a number followed by m or m2 with or without spaces in between
     val columns = List("title", "description")
 
     val dfSurface = columns.foldLeft(dfCleanDesc) { (accDF, column) =>
@@ -64,7 +64,7 @@ object PropertiesReader {
           .otherwise($"surface_total"))
     }
 
-    // Buscar ambientes en description y title
+    // Search for rooms in title and description
     val updatedDF = columns.foldLeft(dfSurface) { (accDF, column) =>
       accDF.withColumn("rooms",
         when($"rooms".isNull && col(column).contains("mono"), 1)
@@ -74,9 +74,12 @@ object PropertiesReader {
       )
     }
 
-    //df.drop(columns=['id', 'ad_type', 'start_date', 'end_date','lat', 'lon', 'l1', 'l2', 'l4', 'l5', 'l6', 'price_period','title', 'description'])
+    // TODO: Search for bathrooms and rooms?
+
+    //Drop unnecessary columns
     val finalDF = updatedDF.drop("id", "ad_type", "start_date", "end_date", "lat", "lon", "l1", "l2", "l4", "l5", "l6", "price_period", "title", "description")
 
+    // Write to postgres
     finalDF.write
       .format("jdbc")
       .mode("overwrite")
