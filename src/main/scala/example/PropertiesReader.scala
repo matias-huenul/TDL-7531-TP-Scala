@@ -10,7 +10,6 @@ import java.net.URL
 import java.nio.file.{Files, Paths}
 
 object PropertiesReader {
-  def jdbcMode(overwrite: Boolean): String = if (overwrite) "overwrite" else "append"
   def propertiesDataUpdate(overwrite: Boolean = false): Unit = {
     val spark: SparkSession = SparkSession.builder()
       .appName("Example")
@@ -18,6 +17,7 @@ object PropertiesReader {
       .getOrCreate()
 
     val csv = List(("https://gitlab.com/mpata2000/datos_tdl/-/raw/main/ar_properties.csv", "ar_properties_2020_2021.csv"))
+
     val uploadedCsv: DataFrame = spark.read
       .format("jdbc")
       .option("driver", "org.postgresql.Driver")
@@ -27,33 +27,31 @@ object PropertiesReader {
       .option("password", "+?gZMK.KFtxC@3x")
       .load()
 
-
-
     csv.foreach(x => {
       val url = x._1
       val outputPath = x._2
 
+      // Check if file is already uploaded
       if (overwrite || uploadedCsv.withColumn("link", lower(col("link"))).filter(col("link") === url).count() == 0) {
         val properties = read_csv(url, outputPath)
+
+
+        // TODO: Chek if id is not needed, maybe use link as primary key. Add created_at!
         val maxId: Int = uploadedCsv.agg(max("id")).head().getInt(0)
         val values: Seq[(Int, String, String)] = Seq((maxId+1, url, outputPath))
         val df = spark.createDataFrame(values).toDF("id","link", "file_name")
-
         val union = uploadedCsv.unionByName(df,allowMissingColumns = true)
-        union.write
-          .format("jdbc")
-          .mode(jdbcMode(overwrite))
-          .option("driver", "org.postgresql.Driver")
+
+        val mode: String = if (overwrite && (csv.indexOf(x) == 0)) "overwrite" else "append"
+
+        union.write.format("jdbc").mode(mode).option("driver", "org.postgresql.Driver")
           .option("url", "jdbc:postgresql://db.igdnlrrqfnwivrfldsyy.supabase.co:5432/postgres")
           .option("dbtable", "csv")
           .option("user", "postgres")
           .option("password", "+?gZMK.KFtxC@3x")
           .save()
 
-        properties.write
-          .format("jdbc")
-          .mode(jdbcMode(overwrite))
-          .option("driver", "org.postgresql.Driver")
+        properties.write.format("jdbc").mode(mode).option("driver", "org.postgresql.Driver")
           .option("url", "jdbc:postgresql://db.igdnlrrqfnwivrfldsyy.supabase.co:5432/postgres")
           .option("dbtable", "properties")
           .option("user", "postgres")
@@ -65,6 +63,8 @@ object PropertiesReader {
     })
   }
 
+  // Read csv from path if it exists, otherwise download it from url
+  // Then clean and transform the data
   def read_csv(url: String, path: String): DataFrame = {
     val spark: SparkSession = SparkSession.builder()
       .appName("Example")
@@ -129,6 +129,7 @@ object PropertiesReader {
     }
 
     // TODO: Search for bathrooms and rooms?
+    // TODO: Rename columns
 
     //Drop unnecessary columns
     val finalDF = updatedDF.drop("id", "ad_type", "start_date", "end_date", "lat", "lon", "l1", "l2", "l4", "l5", "l6", "price_period", "title", "description")
