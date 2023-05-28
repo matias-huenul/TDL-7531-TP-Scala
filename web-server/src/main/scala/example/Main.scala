@@ -22,19 +22,18 @@ object Main extends App {
           try {
             println(s"Received request with body $body")
             val (chatId, text) = Telegram.parseMessage(body)
-            val responseMessage = Commands.handleMessage(text)
-            // println(s"Sending message: $responseMessage")
-            Database.searchProperties(Map.empty[String, String]).map { response =>
-              println(s"Database API response: $response")
+            Commands.handleMessage(text).map { responseMessage =>
+              println(s"Sending message: $responseMessage")
+              Telegram
+                .sendMessage(chatId, responseMessage)
+                .map { response =>
+                  println(s"Telegram API response: ${response.status}")
+                  response.discardEntityBytes()
+                  StatusCodes.OK
+                }
             }
+            
 
-            Telegram
-              .sendMessage(chatId, responseMessage)
-              .map { response =>
-                println(s"Telegram API response: ${response.status}")
-                response.discardEntityBytes()
-                StatusCodes.OK
-              }
           } catch {
             case e: Exception =>
               println(s"An error ocurred: $e")

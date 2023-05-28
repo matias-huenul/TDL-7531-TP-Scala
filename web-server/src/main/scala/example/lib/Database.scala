@@ -17,9 +17,23 @@ object Database {
   implicit val system = ActorSystem("database")
   implicit val formats: Formats = DefaultFormats
 
-  def searchProperties(args: Map[String, String])(implicit ec: ExecutionContext): Future[List[Map[String, String]]] = {
-    val url = sys.env("SUPABASE_API_URL") + "/rest/v1/properties?select=l3,rooms&limit=3"
+  def makeQueryString(args: Map[String, String]): String = {
+    args.map { case (key, value) => s"$key=eq.$value" }.mkString("&")
+  }
+
+  /** Search properties in the database.
+    *
+    * @param args The filter arguments of the search.
+    * @return The response to the search.
+    */
+  def searchProperties(
+    args: Map[String, String]
+  )(implicit ec: ExecutionContext): Future[List[Map[String, String]]] = {
     val apiKey = sys.env("SUPABASE_API_KEY")
+    val baseUrl = sys.env("SUPABASE_API_URL") + "/rest/v1/properties?select=l3,rooms,price,currency,property_type,operation_type&limit=3&"
+    val url = baseUrl + makeQueryString(args)
+
+    println(s"URL: $url")
 
     val request = HttpRequest(
       uri = url,
@@ -32,15 +46,10 @@ object Database {
     Http().singleRequest(request).flatMap { response =>
       response.entity.dataBytes.runFold(ByteString(""))(_ ++ _).map { body =>
         val jsonBody = parse(body.utf8String)
-        jsonBody.extract[List[Map[String, String]]]
-
-        // val responseMessage = properties
-        //   .map { property =>
-        //     val l3 = property("l3")
-        //     val rooms = property("rooms")
-        //     s"$l3 - $rooms"
-        //   }
-        //   .mkString("\n")
+        println(s"JSON body: $jsonBody")
+        val results = jsonBody.extract[List[Map[String, String]]]
+        println(s"Results: $results")
+        results
       }
     }
   }

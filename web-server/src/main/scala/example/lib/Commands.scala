@@ -8,6 +8,9 @@ import scala.concurrent.Future
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
+import scala.concurrent.ExecutionContext
+
+import example.lib.Database
 
 object Commands {
   implicit val system = ActorSystem("commands")
@@ -18,8 +21,9 @@ object Commands {
     * @param text The text of the message to handle.
     * @return The response to the message.
     */
-  def handleMessage(text: String): String = {
+  def handleMessage(text: String)(implicit ec: ExecutionContext): Future[String] = {
     val (command, args) = parseMessage(text)
+    println(s"Command: $command, args: $args")
     handleCommand(command, args)
   }
 
@@ -54,7 +58,7 @@ object Commands {
     * @param args The arguments of the command.
     * @return The response to the command.
     */
-  def handleCommand(command: String, args: Map[String, String]): String = {
+  def handleCommand(command: String, args: Map[String, String])(implicit ec: ExecutionContext): Future[String] = {
     command match {
       case "buscar" => searchProperties(args)
       case "tasar" => estimatePropertyValue(args)
@@ -67,36 +71,40 @@ object Commands {
     *
     * @return The greeting message.
     */
-  def greet(): String = {
-    """¡Hola!
-      |
-      |Soy un bot diseñado para ayudarte a encontrar propiedades en venta o alquiler, así también como para estimar el valor de tus propiedades.
-      |
-      |Escribí /ayuda para obtener información sobre los comandos disponibles""".stripMargin
+  def greet()(implicit ec: ExecutionContext): Future[String] = {
+    Future {
+      """¡Hola!
+        |
+        |Soy un bot diseñado para ayudarte a encontrar propiedades en venta o alquiler, así también como para estimar el valor de tus propiedades.
+        |
+        |Escribí /ayuda para obtener información sobre los comandos disponibles""".stripMargin
+    }
   }
 
   /** Return a help message.
     *
     * @return The help message.
     */
-  def help(): String = {
-    """Los comandos disponibles son:
-      |
-      |/buscar - Buscar propiedades en venta o alquiler
-      |  Parámetros:
-      |    - ubicacion: Ubicación de la propiedad
-      |    - tipo: Tipo de propiedad (casa, departamento, local, terreno)
-      |    - operacion: Tipo de operación (venta, alquiler)
-      |  Ejemplo de uso:
-      |    /buscar ubicacion=Palermo, tipo=departamento, operacion=venta
-      |
-      |/tasar - Obtener un valor estimado de tu propiedad
-      |  Parámetros:
-      |    - ubicacion: Ubicación de la propiedad
-      |    - tipo: Tipo de propiedad (casa, departamento, local, terreno)
-      |    - superficie: Superficie de la propiedad
-      |  Ejemplo de uso:
-      |    /tasar ubicacion=Palermo, tipo=departamento, superficie=50""".stripMargin
+  def help()(implicit ec: ExecutionContext): Future[String] = {
+    Future {
+      """Los comandos disponibles son:
+        |
+        |/buscar - Buscar propiedades en venta o alquiler
+        |  Parámetros:
+        |    - ubicacion: Ubicación de la propiedad
+        |    - tipo: Tipo de propiedad (casa, departamento, local, terreno)
+        |    - operacion: Tipo de operación (venta, alquiler)
+        |  Ejemplo de uso:
+        |    /buscar ubicacion=Palermo, tipo=departamento, operacion=venta
+        |
+        |/tasar - Obtener un valor estimado de tu propiedad
+        |  Parámetros:
+        |    - ubicacion: Ubicación de la propiedad
+        |    - tipo: Tipo de propiedad (casa, departamento, local, terreno)
+        |    - superficie: Superficie de la propiedad
+        |  Ejemplo de uso:
+        |    /tasar ubicacion=Palermo, tipo=departamento, superficie=50""".stripMargin
+    }
   }
 
   /** Search properties.
@@ -104,17 +112,22 @@ object Commands {
     * @param args The arguments of the command.
     * @return The response to the command.
     */
-  def searchProperties(args: Map[String, String]): String = {
-    val location = args.getOrElse("ubicacion", "")
-    val propertyType = args.getOrElse("tipo", "")
-    val operationType = args.getOrElse("operacion", "")
-
-    val message =
-      s"""Buscando propiedades en $location
-        |Tipo: $propertyType
-        |Operación: $operationType""".stripMargin
-
-    message
+  def searchProperties(
+    args: Map[String, String]
+  )(implicit ec: ExecutionContext): Future[String] = {
+    println(s"Searching properties with args: $args")
+    Database.searchProperties(args).map { properties =>
+      properties.map { property =>
+        val operationType = property("operation_type")
+        val propertyType = property("property_type")
+        val l3 = property("l3")
+        val rooms = property("rooms")
+        val price = property("price")
+        val currency = property("currency")
+        s"$operationType $propertyType en $l3, $rooms ambientes, $price $currency"
+      }
+      .mkString("\n")
+    }
   }
 
   /** Estimate the value of a property.
@@ -122,16 +135,9 @@ object Commands {
     * @param args The arguments of the command.
     * @return The response to the command.
     */
-  def estimatePropertyValue(args: Map[String, String]): String = {
-    val propertyType = args.getOrElse("tipo", "")
-    val location = args.getOrElse("ubicacion", "")
-    val propertySize = args.getOrElse("superficie", "")
-
-    val message =
-      s"""Estimando el valor de tu propiedad en $location
-        |Tipo: $propertyType
-        |Tamaño: $propertySize""".stripMargin
-
-    message
+  def estimatePropertyValue(args: Map[String, String])(implicit ec: ExecutionContext): Future[String] = {
+    Future {
+      "..."
+    }
   }
 }
