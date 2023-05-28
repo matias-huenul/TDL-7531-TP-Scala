@@ -1,28 +1,13 @@
 package example
 
-import net.ruippeixotog.scalascraper.browser._
-
-import net.ruippeixotog.scalascraper.dsl.DSL._
-import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
-import net.ruippeixotog.scalascraper.dsl.DSL.Parse._
-
 import org.json4s._
 import org.json4s.native.JsonMethods._
-
-
 import org.jsoup._
+
+import java.io.PrintWriter
 object WebScrapper{
   def zonaprop(): Unit = {
     val url = "https://www.zonaprop.com.ar"
-    // `extract` is the same as `>>`
-    //doc.extract("title")
-
-    // `tryExtract` is the same as `>?>`
-    //doc.tryExtract.element("#optional")
-
-    val browser = new JsoupBrowser(userAgent = "Mozilla/5.0")
-    //browser.get(url + "/casas-departamentos-ph-alquiler-capital-federal.html")
-
 
     val doc = Jsoup.connect(url + "/casas-departamentos-ph-alquiler-capital-federal.html")
       .userAgent("Mozilla")
@@ -33,174 +18,54 @@ object WebScrapper{
     val result = s.split("\\{\"listPostings\":")(1)
       .split("\\,\"listCondominium\"")(0)
 
-    //Put result into txt file
-    //val pw = new java.io.PrintWriter(new java.io.File("result.txt" ))
-    //pw.write(result)
-    //pw.close
     implicit val formats = DefaultFormats
 
     val json = parse(result)
 
-    val dataList = json.extract[JArray]
+    val dataList = json.extract[JArray].arr
     val examples = dataList(0)
 
 
+    val property = new Propiedad()
     println("Id " + (examples \ "url").extract[String])
+    property.url = (examples \ "url").extract[String]
 
 
-    println("Price " + (examples \ "priceOperationTypes"))
-    // 'priceOperationTypes': [{'lowPricePercentage': None,
+    println("Price " + (examples \ "priceOperationTypes")(0) \ "operationType")
+    // 'priceOperationTypes': [
+    //  {'lowPricePercentage': None,
     //   'operationType': {'name': 'Alquiler', 'operationTypeId': '2'},
-    //   'prices': [{'currencyId': '2',
+    //   'prices': [
+    //     {'currencyId': '2',
     //     'amount': 4200,
     //     'formattedAmount': '4.200',
-    //     'currency': 'USD'}]}],
+    //     'currency': 'USD'}
+    //     ]
+    //   }
+    // ],
 
-    //println("exp " + (examples \ "expenses"))
+    val features = (examples \ "mainFeatures")
+    val keys = features match {
+      case JObject(fields) => fields.map { case (key, _) => key }
+      case _ => List.empty[String]
+    }
 
-    //println("Main features " + (examples \ "mainFeatures"))
-    //'mainFeatures': {'1000027': {'featureId': '1000027',
-    //   'label': 'Luminoso',
-    //   'measure': None,
-    //   'value': 'Muy luminoso',
-    //   'icon': None,
-    //   'featureCategoryId': '4'},
-    //  'CFT100': {'featureId': 'CFT100',
-    //   'label': 'Superficie total',
-    //   'measure': 'm²',
-    //   'value': '418',
-    //   'icon': None,
-    //   'featureCategoryId': 'CFC2'},
-    //  'CFT101': {'featureId': 'CFT101',
-    //   'label': 'Superficie cubierta',
-    //   'measure': 'm²',
-    //   'value': '378',
-    //   'icon': None,
-    //   'featureCategoryId': 'CFC2'},
-    //  'CFT2': {'featureId': 'CFT2',
-    //   'label': 'Dormitorios',
-    //   'measure': None,
-    //   'value': '4',
-    //   'icon': None,
-    //   'featureCategoryId': 'CFC1'},
-    //  'CFT3': {'featureId': 'CFT3',
-    //   'label': 'Baños',
-    //   'measure': None,
-    //   'value': '3',
-    //   'icon': None,
-    //   'featureCategoryId': 'CFC1'},
-    //  'CFT7': {'featureId': 'CFT7',
-    //   'label': 'Cocheras',
-    //   'measure': None,
-    //   'value': '2',
-    //   'icon': None,
-    //   'featureCategoryId': 'CFC1'}},
+    for(key <- keys){
+      println("key " + key)
+      val value = ((features \ key) \ "value").extractOpt[String]
 
-    //println("general fatures " + (examples \ "generalFeatures"))
-    //'generalFeatures': {'Características generales': {'1000018': {'featureId': '1000018',
-    //    'label': 'Cobertura cochera',
-    //    'measure': None,
-    //    'value': 'Cubierta',
-    //    'icon': None,
-    //    'featureCategoryId': '4'},
-    //   '1000025': {'featureId': '1000025',
-    //    'label': 'Frente del terreno (mts)',
-    //    'measure': None,
-    //    'value': '8',
-    //    'icon': None,
-    //    'featureCategoryId': '4'},
-    //   '1000078': {'featureId': '1000078',
-    //    'label': 'Parrilla',
-    //    'measure': None,
-    //    'value': None,
-    //    'icon': None,
-    //    'featureCategoryId': '4'}},
-    //  'Servicios': {'2000148': {'featureId': '2000148',
-    //    'label': 'Ascensor',
-    //    'measure': None,
-    //    'value': None,
-    //    'icon': None,
-    //    'featureCategoryId': '1'}},
-    //  'Ambientes': {'1000100': {'featureId': '1000100',
-    //    'label': 'Balcón',
-    //    'measure': None,
-    //    'value': None,
-    //    'icon': None,
-    //    'featureCategoryId': '2'},
-    //   '1000102': {'featureId': '1000102',
-    //    'label': 'Cocina',
-    //    'measure': None,
-    //    'value': None,
-    //    'icon': None,
-    //    'featureCategoryId': '2'},
-    //   '1000103': {'featureId': '1000103',
-    //    'label': 'Comedor',
-    //    'measure': None,
-    //    'value': None,
-    //    'icon': None,
-    //    'featureCategoryId': '2'},
-    //   '1000105': {'featureId': '1000105',
-    //    'label': 'Dependencia servicio',
-    //    'measure': None,
-    //    'value': None,
-    //    'icon': None,
-    //    'featureCategoryId': '2'},
-    //   '1000106': {'featureId': '1000106',
-    //    'label': 'Dormitorio en suite',
-    //    'measure': None,
-    //    'value': None,
-    //    'icon': None,
-    //    'featureCategoryId': '2'},
-    //   '1000110': {'featureId': '1000110',
-    //    'label': 'Lavadero',
-    //    'measure': None,
-    //    'value': None,
-    //    'icon': None,
-    //    'featureCategoryId': '2'},
-    //   '1000111': {'featureId': '1000111',
-    //    'label': 'Living',
-    //    'measure': None,
-    //    'value': None,
-    //    'icon': None,
-    //    'featureCategoryId': '2'},
-    //   '1000112': {'featureId': '1000112',
-    //    'label': 'Living comedor',
-    //    'measure': None,
-    //    'value': None,
-    //    'icon': None,
-    //    'featureCategoryId': '2'},
-    //   '1000114': {'featureId': '1000114',
-    //    'label': 'Patio',
-    //    'measure': None,
-    //    'value': None,
-    //    'icon': None,
-    //    'featureCategoryId': '2'},
-    //   '1000116': {'featureId': '1000116',
-    //    'label': 'Terraza',
-    //    'measure': None,
-    //    'value': None,
-    //    'icon': None,
-    //    'featureCategoryId': '2'},
-    //   '1000117': {'featureId': '1000117',
-    //    'label': 'Toilette',
-    //    'measure': None,
-    //    'value': None,
-    //    'icon': None,
-    //    'featureCategoryId': '2'},
-    //   '1000118': {'featureId': '1000118',
-    //    'label': 'Vestidor',
-    //    'measure': None,
-    //    'value': None,
-    //    'icon': None,
-    //    'featureCategoryId': '2'}},
-    //  'Características': {'1000085': {'featureId': '1000085',
-    //    'label': 'Quincho',
-    //    'measure': None,
-    //    'value': None,
-    //    'icon': None,
-    //    'featureCategoryId': '5'}}},
+      key match {
+        case "CFT100" => property.superficeTotal = value.getOrElse("0").toInt
+        case "CFT101" => property.superficieCubierta = value.getOrElse("0").toInt
+        case "CFT1" => property.ambientes = value.getOrElse("0").toInt
+        case "CFT2" => property.dormitorios = value.getOrElse("0").toInt
+        case "CFT3" => property.banios = value.getOrElse("0").toInt
+        case "CFT7" => property.cochera = value.getOrElse("0").toInt
+        case _ => //Resto de keys
+      }
+    }
 
-    println("tipo " + (examples \ "realEstateType"))
+    println("tipo " + (examples \ "realEstateType" \ "name"))
     //'realEstateType': {'name': 'Casa', 'realEstateTypeId': '1'},
 
     //println("location " + (examples \ "postingLocation"))
@@ -232,7 +97,7 @@ object WebScrapper{
     // 'postingGeolocation': {'geolocation': {'latitude': -34.58013254297343, 'longitude': -58.39818611513063},
 
 
-    val title = doc >> element("h1")
+    /*val title = doc >> element("h1")
     val listings = doc >> elementList(".sc-1tt2vbg-3")
 
     for(listing <- listings) {
@@ -286,7 +151,7 @@ object WebScrapper{
 
 
     }
-
+    */
 
   }
 }
