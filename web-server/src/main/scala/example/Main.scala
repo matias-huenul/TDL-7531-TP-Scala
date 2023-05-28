@@ -6,6 +6,7 @@ import akka.stream.ActorMaterializer
 
 import example.lib.Telegram
 import example.lib.Commands
+import example.lib.Database
 
 object Main extends App {
   implicit val system = ActorSystem("main")
@@ -22,7 +23,10 @@ object Main extends App {
             println(s"Received request with body $body")
             val (chatId, text) = Telegram.parseMessage(body)
             val responseMessage = Commands.handleMessage(text)
-            println(s"Sending message: $responseMessage")
+            // println(s"Sending message: $responseMessage")
+            Database.searchProperties(Map.empty[String, String]).map { response =>
+              println(s"Database API response: $response")
+            }
 
             Telegram
               .sendMessage(chatId, responseMessage)

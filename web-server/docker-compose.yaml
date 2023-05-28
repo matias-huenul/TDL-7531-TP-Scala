@@ -10,6 +10,8 @@ services:
     # hostname: server
     environment:
       - TELEGRAM_API_TOKEN=${TELEGRAM_API_TOKEN}
+      - SUPABASE_API_URL=${SUPABASE_API_URL}
+      - SUPABASE_API_KEY=${SUPABASE_API_KEY}
     ports:
       - 8080:8080
     volumes:
