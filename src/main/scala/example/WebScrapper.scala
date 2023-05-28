@@ -18,6 +18,7 @@ object WebScrapper{
     val numberProperties = doc1.getElementsByTag("h1").first().text().replaceAll("[^0-9]", "")
     println(numberProperties)
 
+    // TODO: iterate over all pages
     for(i <- 1 to 10){
       val doc = Jsoup.connect(url + "/casas-departamentos-ph-alquiler-capital-federal-pagina-" + i + ".html")
       .userAgent("Mozilla")
@@ -36,7 +37,7 @@ object WebScrapper{
 
       for(data <- dataList){
         val property = new Propiedad()
-        property.url = (data \ "url").extract[String]
+        property.url = url + (data \ "url").extract[String]
 
         // 'priceOperationTypes': [
         // {'lowPricePercentage': None,
