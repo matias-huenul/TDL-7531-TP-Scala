@@ -58,6 +58,7 @@ object WebScrapper{
         val operationTypes = (data \ "priceOperationTypes").extract[JArray].arr
         for (operationType <- operationTypes) {
           if ((operationType \ "operationType" \ "operationTypeId").extract[String] == operacion) {
+            property.operacion = (operationType \ "operationType" \ "name").extract[String]
             val prices = (operationType \ "prices")(0)
             property.precio = (prices \ "amount").extractOpt[Int].getOrElse(0)
             property.moneda = (prices \ "currency").extractOpt[String].getOrElse("ARS")
