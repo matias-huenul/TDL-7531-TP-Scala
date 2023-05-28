@@ -65,7 +65,7 @@ object WebScrapper{
           }
         }
 
-        property.expensas = (data \ "expenses").extractOpt[Int].getOrElse(0)
+        property.expensas = (data \ "expenses" \ "amount").extractOpt[Int].getOrElse(0)
 
         val features = (data \ "mainFeatures")
         val keys = features match {
