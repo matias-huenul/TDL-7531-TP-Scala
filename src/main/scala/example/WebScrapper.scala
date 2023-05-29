@@ -4,61 +4,52 @@ import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.jsoup._
 
-import java.io.PrintWriter
 object WebScrapper{
-  def zonaprop(): Unit = {
-    val operacion = "2" // Alquiler id = 2 Venta es 1
 
-    val url = "https://www.zonaprop.com.ar"
-    val doc1 = Jsoup.connect(url + "/casas-departamentos-ph-alquiler-capital-federal.html")
+  /*
+   * Operacion:
+   *    1 -> Venta
+   *    2 -> Alquiler
+  */
+  def zonaprop(operacion:String = "2"): List[Propiedad] = {
+    //Todo: add loggin
+    val operationStr = if (operacion == "1") "venta" else "alquiler"
+    val urlZonaProp = "https://www.zonaprop.com.ar"
+    val url = urlZonaProp + "/casas-departamentos-ph-" + operationStr + "-capital-federal"
+
+    var doc = Jsoup.connect(url + ".html")
       .userAgent("Mozilla")
       .get()
 
     val listProperties = new scala.collection.mutable.ListBuffer[Propiedad]()
-    val numberProperties = doc1.getElementsByTag("h1").first().text().replaceAll("[^0-9]", "")
-    println(numberProperties)
+    val numberProperties = doc.getElementsByTag("h1").first().text().replaceAll("[^0-9]", "").toInt
+    val numberOfPages = (numberProperties/20)+1 // 20 propiedades por pagina
 
-    // TODO: iterate over all pages
-    for(i <- 1 to 10){
-      val doc = Jsoup.connect(url + "/casas-departamentos-ph-alquiler-capital-federal-pagina-" + i + ".html")
-      .userAgent("Mozilla")
-      .get()
+    // 461 seconds for 277 page y 5537 properties, 1.66 sec per page
+    for(i <- 1 to numberOfPages){
+      doc = Jsoup.connect(url + "-pagina-" + i + ".html")
+        .userAgent("Mozilla")
+        .get()
+
+      // Get json data from script
       val s = doc.getElementById("preloadedData").data()
-
-
       val result = s.split("\\{\"listPostings\":")(1).split("\\,\"listCondominium\"")(0)
 
       implicit val formats = DefaultFormats
 
       val json = parse(result)
-
       val dataList = json.extract[JArray].arr
-
 
       for(data <- dataList){
         val property = new Propiedad()
-        property.url = url + (data \ "url").extract[String]
+        property.id = (data \ "postingId").extract[String]
+        property.url = urlZonaProp + (data \ "url").extract[String]
 
-        // 'priceOperationTypes': [
-        // {'lowPricePercentage': None,
-        //   'operationType': {'name': 'Venta', 'operationTypeId': '1'},
-        //   'prices': [
-        //      {'currencyId': '2',
-        //     'amount': 3000000,
-        //     'formattedAmount': '3.000.000',
-        //     'currency': 'USD'}
-        //     ]
-        //   },
-        //  {'lowPricePercentage': None,
-        //   'operationType': {'name': 'Alquiler', 'operationTypeId': '2'},
-        //   'prices': [{'currencyId': '2',
-        //     'amount': 6900,
-        //     'formattedAmount': '6.900',
-        //     'currency': 'USD'}]}],
+        //
         val operationTypes = (data \ "priceOperationTypes").extract[JArray].arr
         for (operationType <- operationTypes) {
           if ((operationType \ "operationType" \ "operationTypeId").extract[String] == operacion) {
-            property.operacion = (operationType \ "operationType" \ "name").extract[String]
+            property.operacion = operationStr.capitalize
             val prices = (operationType \ "prices")(0)
             property.precio = (prices \ "amount").extractOpt[Int].getOrElse(0)
             property.moneda = (prices \ "currency").extractOpt[String].getOrElse("ARS")
@@ -108,7 +99,6 @@ object WebScrapper{
       }
     }
 
-    println(listProperties.length)
-    println(listProperties)
+    listProperties.toList
   }
 }

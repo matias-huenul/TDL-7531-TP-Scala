@@ -1,7 +1,7 @@
 package example
 
 class Propiedad (
-  var id: Int = 0,
+  var id: String = "",
   var url: String = "",
   var tipo: String = "",
   var operacion: String = "",
@@ -16,7 +16,6 @@ class Propiedad (
   var direccion: String = "",
   var coordenadas: String = "",
   var barrio: String = "",
-  var pagina: String = "",
   var cochera: Int = 0) {
 
 override def toString(): String = {
