@@ -12,7 +12,7 @@ object WebScrapper{
    *    2 -> Alquiler
   */
   def zonaprop(operacion:String = "2"): List[Propiedad] = {
-    //Todo: add loggin
+    //Todo: add log
     val operationStr = if (operacion == "1") "venta" else "alquiler"
     val urlZonaProp = "https://www.zonaprop.com.ar"
     val url = urlZonaProp + "/casas-departamentos-ph-" + operationStr + "-capital-federal"
@@ -58,7 +58,7 @@ object WebScrapper{
 
         property.expensas = (data \ "expenses" \ "amount").extractOpt[Int].getOrElse(0)
 
-        val features = (data \ "mainFeatures")
+        val features = data \ "mainFeatures"
         val keys = features match {
           case JObject(fields) => fields.map { case (key, _) => key }
           case _ => List.empty[String]
@@ -74,13 +74,13 @@ object WebScrapper{
             case "CFT2" => property.dormitorios = value.getOrElse("0").toInt
             case "CFT3" => property.banios = value.getOrElse("0").toInt
             case "CFT7" => property.cochera = value.getOrElse("0").toInt
-            case _ => //Resto de keys
+            case _ => //Rest of the keys
           }
         }
 
         property.tipo = (data \ "realEstateType" \ "name").extract[String]
 
-        val postLocation = (data \ "postingLocation")
+        val postLocation = data \ "postingLocation"
         property.direccion = (postLocation \ "address" \ "name").extractOpt[String].getOrElse("")
 
         if ((postLocation \ "location" \ "label").extract[String] == "BARRIO") {
@@ -89,9 +89,8 @@ object WebScrapper{
           property.barrio = (postLocation \ "location" \ "parent" \ "name").extractOpt[String].getOrElse("")
         }
 
-
         // 'postingGeolocation': {'geolocation': {'latitude': -34.58013254297343, 'longitude': -58.39818611513063},
-        val geolocation = (postLocation \ "postingGeolocation" \ "geolocation")
+        val geolocation = postLocation \ "postingGeolocation" \ "geolocation"
         property.coordenadas = (geolocation \ "latitude").extractOpt[String].getOrElse("0") + "," +
           (geolocation \ "longitude").extractOpt[String].getOrElse("0")
 
