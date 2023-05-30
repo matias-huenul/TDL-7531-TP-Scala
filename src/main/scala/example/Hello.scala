@@ -11,7 +11,7 @@ import example.utils.Utils
 object Hello extends App {
 
   //println("hello world")
-
+  PropertiesReader.propertiesDataUpdate()
   WebScrapper.zonaprop()
 
   Utils.test()
