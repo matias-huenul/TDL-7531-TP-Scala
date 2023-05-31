@@ -3,11 +3,24 @@ package example
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.jsoup._
-
 import example.utils.Operation
+import org.jsoup.nodes.Document
+
+import scala.collection.mutable.ListBuffer
 object WebScrapper{
 
-  /*
+  /**
+   * Get the number of pages of zonaprop.com.ar
+   * @param doc: Document of the first page of zonaprop.com.ar/casas-departamentos-ph-_-capital-federal
+   * @return Int: Number of pages
+   */
+  def getNumberPagesZonaprop(doc: Document): Int = {
+    val numberProperties = doc.getElementsByTag("h1").first().text().replaceAll("[^0-9]", "").toInt
+    (numberProperties/20)+1 // 20 propiedades por pagina
+  }
+
+  /** Transform a string with json data to a list of json objects
+   *
    * @param stringData: String with json data
    * @return List[JValue]: List of json objects
   */
@@ -18,27 +31,27 @@ object WebScrapper{
     json.extract[JArray].arr
   }
 
-  /*
-   * @param operacion: String with the operation type ("1" = venta/ "2" alquiler)
+  /**
+   * Scrapes zonaprop.com.ar and returns a list of properties
+   * @param operation: Operation to scrape (Alquiler, Venta)
    * @return List[Propiedad]: List of properties
   */
-  def zonaprop(operacion:Operation.Value = Operation.Alquiler): List[Propiedad] = {
+  def zonaprop(operation:Operation.Value = Operation.Alquiler): List[Propiedad] = {
     //Todo: add log
     implicit val formats = DefaultFormats
 
     val urlZonaProp = "https://www.zonaprop.com.ar"
-    val url = urlZonaProp + "/casas-departamentos-ph-" + operacion + "-capital-federal"
+    val url = urlZonaProp + "/casas-departamentos-ph-" + operation + "-capital-federal"
 
     var doc = Jsoup.connect(url + ".html")
       .userAgent("Mozilla")
       .get()
 
-    val listProperties = new scala.collection.mutable.ListBuffer[Propiedad]()
-    val numberProperties = doc.getElementsByTag("h1").first().text().replaceAll("[^0-9]", "").toInt
-    val numberOfPages = (numberProperties/20)+1 // 20 propiedades por pagina
+    val listProperties = new ListBuffer[Propiedad]()
+    val numberOfPages = getNumberPagesZonaprop(doc)
 
     // 461 seconds for 277 page y 5537 properties, 1.66 sec per page
-    for(i <- 1 to 2){
+    for(i <- 1 to numberOfPages){
       doc = Jsoup.connect(url + "-pagina-" + i + ".html")
         .userAgent("Mozilla")
         .get()
@@ -47,14 +60,15 @@ object WebScrapper{
 
       for(data <- dataList){
         val property = new Propiedad()
+
         property.id = (data \ "postingId").extract[String]
         property.url = urlZonaProp + (data \ "url").extract[String]
 
         //Set data of price (precio, moneda, expensas)
         val operationTypes = (data \ "priceOperationTypes").extract[JArray].arr
         for (operationType <- operationTypes) {
-          if ((operationType \ "operationType" \ "name").extract[String].compareToIgnoreCase(operacion.toString) == 0) {
-            property.operacion = operacion.toString.capitalize
+          if ((operationType \ "operationType" \ "name").extract[String].compareToIgnoreCase(operation.toString) == 0) {
+            property.operacion = operation.toString.capitalize
             val price = (operationType \ "prices")(0)
             property.precio = (price \ "amount").extractOpt[Int].getOrElse(0)
             property.moneda = (price \ "currency").extractOpt[String].getOrElse("ARS")
