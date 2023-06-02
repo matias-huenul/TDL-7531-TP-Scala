@@ -167,7 +167,16 @@ object WebScrapper{
     property.precio = doc.select("span.andes-money-amount>.andes-visually-hidden").first().text().replaceAll("[^0-9]", "").toInt
     property.moneda = Currency.fromString(doc.getElementsByClass("andes-money-amount__currency-symbol").first().text.replaceAll("[1-9]", "").strip())
 
-    property.barrio = doc.select(".andes-breadcrumb__item").last().text()
+    val locationData = doc.select(".ui-vip-location").first()
+
+    try {
+      val locationString = locationData.text()
+      val split = locationString.split(",")
+      property.direccion = split(0).strip()
+      property.barrio = split(1).strip()
+    } catch {
+      case e: Exception => property.barrio = doc.select(".andes-breadcrumb__item").last().text()
+    }
 
     val tableRows = doc.select("tbody.andes-table__body").first().select("tr")
 
@@ -185,6 +194,8 @@ object WebScrapper{
         case _ => //Rest of the keys
       }
     }
+
+
 
     property
   }
