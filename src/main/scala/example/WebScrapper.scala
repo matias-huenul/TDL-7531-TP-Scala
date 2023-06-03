@@ -11,6 +11,7 @@ import org.jsoup.select.Elements
 
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
 import net.ruippeixotog.scalascraper.model.{Document => ScalaDocument}
+import net.ruippeixotog.scalascraper.model.Element
 
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser.JsoupElement
 import net.ruippeixotog.scalascraper.dsl.DSL._
@@ -18,6 +19,7 @@ import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
 
 import scala.collection.mutable.ListBuffer
 object WebScrapper{
+  val URL_ARGENPROP = "https://www.argenprop.com"
 
   /**
    * Get all the numbers from a string
@@ -149,60 +151,72 @@ object WebScrapper{
 
   /**
    * Scrapes argenprop.com and returns a list of properties
+   * @param element: Element to scrape
+   * @param operation: Operation to scrape (Alquiler, Venta)
+   * @return List[Propiedad]: List of properties
+  */
+  private def scrapePropertyArgenprop(element: Element, operation: Operation.Value): Propiedad ={
+    val property = new Propiedad()
+
+    property.url = URL_ARGENPROP + (element >> "a").head.attr("href")
+    property.tipo = property.url.split("/")(1).split("-")(0)
+
+    val cardPrice = (element >> "p.card__price").head
+
+    if ((cardPrice >?> ".card__noprice").head.isEmpty) {
+      property.operacion = operation
+      property.moneda = Currency.fromString((cardPrice >> elementList(".card__currency") >?> text).head.getOrElse("ARS"))
+      property.precio = toNumber(cardPrice.ownText)
+    }
+
+    property.direccion = (element >> ".card__address").head.text
+    property.barrio = (element >> ".card__title--primary").last.text.split(",")(0)
+    property.expensas = toNumber((element >?> text(".card__expenses")).getOrElse("0"))
+
+    val features = element >> ".card__main-features>li"
+
+    for (feature <- features) {
+      val value = toNumber(feature.text)
+
+      (feature >> "i").head.attr("class") match {
+        case "icono-superficie_total" => property.superficeTotal = value
+        case "icono-superficie_cubierta" => property.superficieCubierta = value
+        case "icono-cantidad_ambientes" => property.ambientes = value
+        case "icono-cantidad_dormitorios" => property.dormitorios = value
+        case "icono-cantidad_banos" => property.banios = value
+        case "icono-ambiente_cochera" => property.cochera = value
+        case _ => //Rest of the features
+      }
+    }
+    property
+  }
+
+  /**
+   * Scrapes argenprop.com and returns a list of properties
+   * argenprop has a limit of 100 pages before it returns an error
    * @param operation: Operation to scrape (Alquiler, Venta)
    * @return List[Propiedad]: List of properties
   */
   def argenprop(operation:Operation.Value = Operation.ALQUILER): List[Propiedad] = {
     val listProperties = new ListBuffer[Propiedad]()
     val browser = JsoupBrowser()
-    val urlArgeprop = "https://www.argenprop.com"
-    var url = urlArgeprop + "/departamento-y-casa-y-ph-" + operation + "-localidad-capital-federal"
+    var url = URL_ARGENPROP + "/departamento-y-casa-y-ph-" + operation + "-localidad-capital-federal"
 
-    do {
-      val doc = browser.get(url)
+    try{
+      do {
+        val doc = browser.get(url)
+        val elements = doc >> "div.listing__item"
 
-      val elements = doc >> "div.listing__item"
-
-      for (element <- elements) {
-        val property = new Propiedad()
-
-        property.url = urlArgeprop +(element >> "a").head.attr("href")
-        property.tipo = property.url.split("/")(1).split("-")(0)
-
-        val cardPrice = (element >> "p.card__price").head
-
-        if((cardPrice >?> ".card__noprice").head.isEmpty){
-          property.operacion = operation
-          property.moneda = Currency.fromString((cardPrice >> elementList(".card__currency") >?> text).head.getOrElse("ARS"))
-          property.precio = toNumber((cardPrice >?> text).getOrElse("0"))
+        for (element <- elements) {
+          listProperties.append(scrapePropertyArgenprop(element, operation))
         }
 
-        property.direccion = (element>>".card__address").head.text
-        property.barrio = (element >> ".card__title--primary").last.text.split(",")(0)
-        property.expensas = toNumber((element >?> text(".card__expenses")).getOrElse("0"))
-
-        val features = element >> ".card__main-features>li"
-
-        for (feature <- features) {
-
-          val value = toNumber(feature.text)
-
-          (feature >>"i").head.attr("class") match {
-            case "icono-superficie_total" => property.superficeTotal = value
-            case "icono-superficie_cubierta" => property.superficieCubierta = value
-            case "icono-cantidad_ambientes" => property.ambientes = value
-            case "icono-cantidad_dormitorios" => property.dormitorios = value
-            case "icono-cantidad_banos" => property.banios = value
-            case "icono-ambiente_cochera" => property.cochera = value
-            case _ => //Rest of the features
-          }
-        }
-        listProperties.append(property)
-      }
-
-      url = getNextPageArgenprop(doc)
-    } while (url != urlArgeprop)
-
+        url = URL_ARGENPROP + getNextPageArgenprop(doc)
+        if(toNumber(url)%50 == 0) Thread.sleep(10000) //Sleep 10 seconds every 50 pages
+      } while (url != URL_ARGENPROP)
+    }catch {
+      case e: Exception => println("Error scraping argenprop: " + e.getMessage)
+    }
     listProperties.toList
   }
 
