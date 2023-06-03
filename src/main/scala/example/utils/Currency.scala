@@ -5,13 +5,13 @@ object Currency extends Enumeration {
   val USD: Currency.Value = Value("USD")
 
   def fromString(s: String): Currency.Value = {
-    s match {
+    s.toUpperCase() match {
       case "ARS" => ARS
       case "USD" => USD
       case "U$S" => USD
-      case "pesos" => ARS
-      case "dolares" => USD
-      case "dólares" => USD
+      case "PESOS" => ARS
+      case "DOLARES" => USD
+      case "DÓLARES" => USD
       case _ => ARS
     }
   }

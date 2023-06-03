@@ -1,14 +1,33 @@
 package example
 
+import example.utils.{Currency, Operation}
+
 import org.json4s._
 import org.json4s.native.JsonMethods._
+
 import org.jsoup._
-import example.utils.{Currency, Operation}
 import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
 
+import net.ruippeixotog.scalascraper.browser.JsoupBrowser
+import net.ruippeixotog.scalascraper.model.{Document => ScalaDocument}
+
+import net.ruippeixotog.scalascraper.browser.JsoupBrowser.JsoupElement
+import net.ruippeixotog.scalascraper.dsl.DSL._
+import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
+
 import scala.collection.mutable.ListBuffer
 object WebScrapper{
+
+  /**
+   * Get all the numbers from a string
+   * @param s String: A string with the numbers
+   * @return Int: The numbers of the string in a integer
+   */
+  private def toNumber(s: String): Int = {
+    val number = s.replaceAll("[^0-9]", "")
+    if (number.isEmpty) 0 else number.toInt
+  }
 
   /**
    * Get the number of pages of zonaprop.com.ar
@@ -16,7 +35,7 @@ object WebScrapper{
    * @return Int: Number of pages
    */
   def getNumberPagesZonaprop(doc: Document): Int = {
-    val numberProperties = doc.getElementsByTag("h1").first().text().replaceAll("[^0-9]", "").toInt
+    val numberProperties = toNumber(doc.getElementsByTag("h1").first().text())
     (numberProperties/20)+1 // 20 propiedades por pagina
   }
 
@@ -123,6 +142,11 @@ object WebScrapper{
     listProperties.toList
   }
 
+  private def getNextPageArgenprop(doc: ScalaDocument): String = {
+    val nextPage = doc >> elementList(".pagination__page-next>a")
+    if(nextPage.isEmpty) "" else (nextPage.head >?> attr("href")).getOrElse("")
+  }
+
   /**
    * Scrapes argenprop.com and returns a list of properties
    * @param operation: Operation to scrape (Alquiler, Venta)
@@ -130,6 +154,55 @@ object WebScrapper{
   */
   def argenprop(operation:Operation.Value = Operation.ALQUILER): List[Propiedad] = {
     val listProperties = new ListBuffer[Propiedad]()
+    val browser = JsoupBrowser()
+    val urlArgeprop = "https://www.argenprop.com"
+    var url = urlArgeprop + "/departamento-y-casa-y-ph-" + operation + "-localidad-capital-federal"
+
+    do {
+      val doc = browser.get(url)
+
+      val elements = doc >> "div.listing__item"
+
+      for (element <- elements) {
+        val property = new Propiedad()
+
+        property.url = urlArgeprop +(element >> "a").head.attr("href")
+        property.tipo = property.url.split("/")(1).split("-")(0)
+
+        val cardPrice = (element >> "p.card__price").head
+
+        if((cardPrice >?> ".card__noprice").head.isEmpty){
+          property.operacion = operation
+          property.moneda = Currency.fromString((cardPrice >> elementList(".card__currency") >?> text).head.getOrElse("ARS"))
+          property.precio = toNumber((cardPrice >?> text).getOrElse("0"))
+        }
+
+        property.direccion = (element>>".card__address").head.text
+        property.barrio = (element >> ".card__title--primary").last.text.split(",")(0)
+        property.expensas = toNumber((element >?> text(".card__expenses")).getOrElse("0"))
+
+        val features = element >> ".card__main-features>li"
+
+        for (feature <- features) {
+
+          val value = toNumber(feature.text)
+
+          (feature >>"i").head.attr("class") match {
+            case "icono-superficie_total" => property.superficeTotal = value
+            case "icono-superficie_cubierta" => property.superficieCubierta = value
+            case "icono-cantidad_ambientes" => property.ambientes = value
+            case "icono-cantidad_dormitorios" => property.dormitorios = value
+            case "icono-cantidad_banos" => property.banios = value
+            case "icono-ambiente_cochera" => property.cochera = value
+            case _ => //Rest of the features
+          }
+        }
+        listProperties.append(property)
+      }
+
+      url = getNextPageArgenprop(doc)
+    } while (url != urlArgeprop)
+
     listProperties.toList
   }
 
@@ -152,7 +225,7 @@ object WebScrapper{
 
       links.addAll(doc.select("div.ui-search-item__group--title>a.ui-search-link"))
 
-      maxPages = if (maxPages == 0) doc.select("li.andes-pagination__page-count").last().text().replaceAll("[^0-9]", "").toInt else maxPages
+      maxPages = if (maxPages == 0) toNumber(doc.select("li.andes-pagination__page-count").last().text()) else maxPages
       pageNumber += 1
     } while (pageNumber < maxPages)
 
@@ -194,8 +267,6 @@ object WebScrapper{
         case _ => //Rest of the keys
       }
     }
-
-
 
     property
   }
