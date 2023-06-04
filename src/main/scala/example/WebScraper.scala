@@ -213,10 +213,10 @@ object WebScraper{
 
   /**
    * Scrapes mercadolibre.com.ar and returns of links of publications
-   * @return Elements: List of <a> with links of publications
+   * @return Elements: List of links of publications
   */
-  def getPublicationLinksMELI: Elements = {
-    val links: Elements = new Elements()
+  def getPublicationLinksMELI: List[String] = {
+    val elements: Elements = new Elements()
 
     var maxPages = 0
     var pageNumber = 0
@@ -228,22 +228,27 @@ object WebScraper{
         .userAgent("Mozilla")
         .get()
 
-      links.addAll(doc.select("div.ui-search-item__group--title>a.ui-search-link"))
+      elements.addAll(doc.select("div.ui-search-item__group--title>a.ui-search-link"))
 
       maxPages = if (maxPages == 0) toNumber(doc.select("li.andes-pagination__page-count").last().text()) else maxPages
       pageNumber += 1
     } while (pageNumber < maxPages)
 
-    links
+    val links = new ListBuffer[String]()
+    for(i <- 0 until elements.size()){
+      links.append(elements.get(i).attr("href").split("#")(0))
+    }
+    links.toList
   }
 
   def scrapePropertyMELI(url: String, session:Connection): Property ={
     val doc = session.newRequest().url(url).get()
-
     val property = new Property()
+
     property.url = url
-    property.price = toNumber(doc.select("span.andes-money-amount>.andes-visually-hidden").first.text)
-    property.setCurrency(doc.getElementsByClass("andes-money-amount__currency-symbol").first.text.replaceAll("[1-9]", "").strip)
+    val priceTag = doc.select("span.andes-money-amount>.andes-visually-hidden").first.text
+    property.price = toNumber(priceTag)
+    property.setCurrency(priceTag.replaceAll("[1-9]", "").strip)
 
     try {
       val locationString = doc.select(".ui-vip-location").first.text
@@ -254,9 +259,9 @@ object WebScraper{
       case e: Exception => property.barrio = doc.select(".andes-breadcrumb__item").last.text
     }
 
-    val tableRows = doc.select("tbody.andes-table__body").first().select("tr")
+    val tableRows = doc.select("tr")
 
-    for(i <- 1 until tableRows.size()){
+    for(i <- 0 until tableRows.size()){
       val row = tableRows.get(i)
       val value = toNumber(row.getElementsByTag("td").first().text())
 
@@ -283,15 +288,13 @@ object WebScraper{
   def mercadolibre(): List[Property] = {
     val listProperties = new ListBuffer[Property]()
     val links = getPublicationLinksMELI
-    val session = Jsoup.newSession().userAgent("Mozilla").timeout(10000)
-    for(i <- 0 until links.size()){
-      try {
-        val property = scrapePropertyMELI(links.get(i).attr("href").split("#")(0),session)
-        listProperties.append(property)
-      } catch {
-        case e: Exception => println("Error scraping property: " + links.get(i).attr("href").split("#")(0))
-      }
-      if (i % 50 == 0) Thread.sleep(5000) //Sleep 5 seconds every 50 pages
+    val session = Jsoup.newSession().userAgent("Mozilla")
+    for(link <- links){
+      println(link)
+      val property = scrapePropertyMELI(link,session)
+      listProperties.append(property)
+      println(property)
+      if (links.indexOf(link)%50 == 0) Thread.sleep(5000) //Sleep 5 seconds every 50 pages
     }
 
     listProperties.toList
