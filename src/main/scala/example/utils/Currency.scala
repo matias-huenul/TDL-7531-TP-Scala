@@ -6,10 +6,8 @@ object Currency extends Enumeration {
 
   def fromString(s: String): Currency.Value = {
     s.toUpperCase() match {
-      case "ARS" => ARS
       case "USD" => USD
       case "U$S" => USD
-      case "PESOS" => ARS
       case "DOLARES" => USD
       case "DÓLARES" => USD
       case _ => ARS
