@@ -22,7 +22,7 @@ object Main extends App {
           try {
             println(s"Received request with body $body")
             val (chatId, text) = Telegram.parseMessage(body)
-            Commands.handleMessage(text).map { responseMessage =>
+            Commands.handleMessage(text).flatMap { responseMessage =>
               println(s"Sending message: $responseMessage")
               Telegram
                 .sendMessage(chatId, responseMessage)
@@ -31,9 +31,11 @@ object Main extends App {
                   response.discardEntityBytes()
                   StatusCodes.OK
                 }
+            }.recover {
+              case e: Exception =>
+                println(s"An error ocurred: $e")
+                StatusCodes.OK
             }
-            
-
           } catch {
             case e: Exception =>
               println(s"An error ocurred: $e")

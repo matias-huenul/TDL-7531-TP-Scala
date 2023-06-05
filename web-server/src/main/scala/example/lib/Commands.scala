@@ -136,8 +136,16 @@ object Commands {
     * @return The response to the command.
     */
   def estimatePropertyValue(args: Map[String, String])(implicit ec: ExecutionContext): Future[String] = {
-    Future {
-      "..."
+    println(s"Searching properties with args: $args")
+    Database.estimatePropertyValue(args).map { estimatedValues =>
+      println(s"Property value: $estimatedValues")
+      val estimatedValueString = estimatedValues.map { estimatedValue =>
+        val value = estimatedValue("estimated_property_value")
+        val currency = estimatedValue("currency")
+        s"$value $currency"
+      }
+      .mkString(" / ")
+      s"El valor estimado de tu propiedad es $estimatedValueString"
     }
   }
 }
