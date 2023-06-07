@@ -9,8 +9,10 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
 import scala.concurrent.ExecutionContext
+import java.text.NumberFormat
 
 import example.lib.Database
+import example.lib.Utils
 
 object Commands {
   implicit val system = ActorSystem("commands")
@@ -137,15 +139,26 @@ object Commands {
     */
   def estimatePropertyValue(args: Map[String, String])(implicit ec: ExecutionContext): Future[String] = {
     println(s"Searching properties with args: $args")
-    Database.estimatePropertyValue(args).map { estimatedValues =>
-      println(s"Property value: $estimatedValues")
-      val estimatedValueString = estimatedValues.map { estimatedValue =>
-        val value = estimatedValue("estimated_property_value")
-        val currency = estimatedValue("currency")
-        s"$value $currency"
+    Database.estimatePropertyValue(args).flatMap { estimatedValues =>
+      Utils.getUsdToArsConversion().map { conversion =>
+        println(s"Property values: $estimatedValues")
+        println(s"USD to ARS conversion: $conversion")
+
+        val estimatedValuesInArs: List[Int] = estimatedValues.map { estimatedValue =>
+          val value = estimatedValue("estimated_property_value").toInt
+          val currency = estimatedValue("currency")
+          if (currency == "ARS") {
+            value
+          } else {
+            (value * conversion).toInt            
+          }
+        }
+
+        println(s"Estimated values in ARS: $estimatedValuesInArs")
+        val estimatedValue = (estimatedValuesInArs.sum / estimatedValuesInArs.length).toInt
+        val estimatedValueString = NumberFormat.getNumberInstance.format(estimatedValue)
+        s"El valor estimado de tu propiedad es $estimatedValueString ARS"
       }
-      .mkString(" / ")
-      s"El valor estimado de tu propiedad es $estimatedValueString"
     }
   }
 }

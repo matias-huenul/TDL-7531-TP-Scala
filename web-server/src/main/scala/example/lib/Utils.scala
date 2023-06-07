@@ -8,6 +8,8 @@ import scala.concurrent.Future
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
+import scala.concurrent.ExecutionContext
+import akka.util.ByteString
 
 object Utils {
   implicit val system = ActorSystem("utils")
@@ -32,5 +34,19 @@ object Utils {
     )
 
     Http().singleRequest(request)
+  }
+  
+  /** Get the current USD to ARS conversion.
+    *
+    * @return The USD to ARS conversion.
+    */
+  def getUsdToArsConversion()(implicit ec: ExecutionContext): Future[Double] = {
+    val url = "https://api.bluelytics.com.ar/v2/latest"
+    makeHttpRequest(url, HttpMethods.GET).flatMap { response =>
+      response.entity.dataBytes.runFold(ByteString(""))(_ ++ _).map { body =>
+        val jsonBody = parse(body.utf8String)
+        (jsonBody \ "blue" \ "value_sell").extract[Double]
+      }
+    }
   }
 }
