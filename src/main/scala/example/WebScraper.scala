@@ -10,6 +10,8 @@ import org.json4s.native.JsonMethods._
 import org.jsoup._
 import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
+import me.tongfei.progressbar._
+
 
 import scala.collection.mutable.ListBuffer
 object WebScraper{
@@ -65,6 +67,12 @@ object WebScraper{
 
     val listProperties = new ListBuffer[Property]()
     val numberOfPages = getNumberPagesZonaprop(doc)
+    val pb = new ProgressBarBuilder()
+      .setInitialMax(numberOfPages)
+      .setTaskName("Scraping ZonaProp")
+      .setUnit(" pages", 1)
+      .setStyle(ProgressBarStyle.ASCII)
+      .build()
 
     // 461 seconds for 277 page y 5537 properties, 1.66 sec per page
     for(i <- 1 to numberOfPages){
@@ -131,8 +139,8 @@ object WebScraper{
 
         listProperties.append(property)
       }
+      pb.step()
     }
-    println(listProperties.head)
     listProperties.toList
   }
 
@@ -192,10 +200,21 @@ object WebScraper{
     val listProperties = new ListBuffer[Property]()
     val browser = JsoupBrowser()
     var url = URL_ARGENPROP + "/departamento-y-casa-y-ph-" + operation.toString.toLowerCase + "-localidad-capital-federal"
+    var pb: ProgressBar = null
 
     try{
       do {
         val doc = browser.get(url)
+        if(pb == null) {
+          val href = (doc >> elementList(".pagination__page>a"))
+          val lastPage = href(href.length - 2).text
+
+          pb = new ProgressBarBuilder()
+            .setTaskName("Scraping argenprop")
+            .setInitialMax(toNumber(lastPage))
+            .setStyle(ProgressBarStyle.ASCII)
+            .build()
+        }
         val elements = doc >> "div.listing__item"
 
         for (element <- elements) {
@@ -204,6 +223,7 @@ object WebScraper{
 
         url = URL_ARGENPROP + getNextPageArgenprop(doc)
         if(toNumber(url)%50 == 0) Thread.sleep(10000) //Sleep 10 seconds every 50 pages
+        pb.step()
       } while (url != URL_ARGENPROP)
     }catch {
       case e: Exception => println("Error scraping argenprop: " + e.getMessage)
@@ -220,6 +240,7 @@ object WebScraper{
 
     var maxPages = 0
     var pageNumber = 0
+    var pb: ProgressBar = null
 
     do {
       val indexNumber = pageNumber * 48 + 1
@@ -230,8 +251,17 @@ object WebScraper{
 
       elements.addAll(doc.select("div.ui-search-item__group--title>a.ui-search-link"))
 
-      maxPages = if (maxPages == 0) toNumber(doc.select("li.andes-pagination__page-count").last().text()) else maxPages
+      if(maxPages == 0) {
+        maxPages = toNumber(doc.select("li.andes-pagination__page-count").last().text())
+        pb = new ProgressBarBuilder()
+          .setInitialMax(maxPages)
+          .setTaskName("Getting properties links MELI")
+          .setUnit(" pages", 1)
+          .setStyle(ProgressBarStyle.ASCII)
+          .build()
+      }
       pageNumber += 1
+      pb.step()
     } while (pageNumber < maxPages)
 
     val links = new ListBuffer[String]()
@@ -289,12 +319,17 @@ object WebScraper{
     val listProperties = new ListBuffer[Property]()
     val links = getPublicationLinksMELI
     val session = Jsoup.newSession().userAgent("Mozilla")
+    val pb = new ProgressBarBuilder()
+      .setInitialMax(links.size)
+      .setTaskName("Reading properties from MELI")
+      .setUnit(" properties", 1)
+      .setStyle(ProgressBarStyle.ASCII)
+      .build()
     for(link <- links){
-      println(link)
       val property = scrapePropertyMELI(link,session)
       listProperties.append(property)
-      println(property)
       if (links.indexOf(link)%50 == 0) Thread.sleep(5000) //Sleep 5 seconds every 50 pages
+      pb.step()
     }
 
     listProperties.toList
