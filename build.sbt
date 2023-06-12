@@ -16,7 +16,9 @@ lazy val root = (project in file("."))
     libraryDependencies += "org.postgresql" % "postgresql" % "42.5.4",
     libraryDependencies += "org.jsoup" % "jsoup" % "1.15.4",
     libraryDependencies += "net.ruippeixotog" %% "scala-scraper" % "3.1.0",
-    libraryDependencies += "me.tongfei" % "progressbar" % "0.9.5"
+    libraryDependencies += "me.tongfei" % "progressbar" % "0.9.5",
+    libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.4.7",
+    libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
   )
 
 assemblyMergeStrategy in assembly := {

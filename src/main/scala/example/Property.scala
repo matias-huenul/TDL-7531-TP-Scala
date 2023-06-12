@@ -3,7 +3,6 @@ package example
 import example.utils.{Currency, Operation, PropertyType}
 
 class Property(
-                  var id: String = "",
                   var url: String = "",
                   var propType: PropertyType.Value = PropertyType.DEPARTAMENTO,
                   var operation: Operation.Value = Operation.ALQUILER,

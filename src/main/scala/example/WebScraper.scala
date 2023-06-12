@@ -1,6 +1,8 @@
 package example
 
+import com.typesafe.scalalogging.Logger
 import example.utils.Operation
+import io.netty.util.Timeout
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
 import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
 import net.ruippeixotog.scalascraper.dsl.DSL._
@@ -12,10 +14,12 @@ import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
 import me.tongfei.progressbar._
 
-
+import java.util.Calendar
 import scala.collection.mutable.ListBuffer
 object WebScraper{
   private val URL_ARGENPROP = "https://www.argenprop.com"
+  private val URL_MELI = "https://inmuebles.mercadolibre.com.ar/departamentos/alquiler/capital-federal/"
+  val URL_ZONAPROP = "https://www.zonaprop.com.ar"
 
   /**
    * Get all the numbers from a string
@@ -50,16 +54,82 @@ object WebScraper{
   }
 
   /**
+   * Extract the data of the properties from the json
+   * @param data: Json with the data of the properties
+   * @param operation: Operation of the properties
+   * @return Property: Property with the data of the json
+   */
+  def readPropertyZonaprop(data: JValue, operation: Operation.Value):Property = {
+    implicit val formats: DefaultFormats.type = DefaultFormats
+    val property = new Property()
+
+    property.url = URL_ZONAPROP + (data \ "url").extract[String]
+    property.operation = operation
+
+    //Set data of price (precio, moneda, expensas)
+    val operationTypes = (data \ "priceOperationTypes").extract[JArray].arr
+    for (operationType <- operationTypes) {
+      if ((operationType \ "operationType" \ "name").extract[String].compareToIgnoreCase(operation.toString) == 0) {
+        val price = (operationType \ "prices") (0)
+        property.price = (price \ "amount").extractOpt[Int].getOrElse(0)
+        property.setCurrency((price \ "currency").extractOpt[String].getOrElse("ARS"))
+      }
+    }
+    property.expenses = (data \ "expenses" \ "amount").extractOpt[Int].getOrElse(0)
+
+    // Set data of features (superficie, ambientes, dormitorios, banios, cochera)
+    val features = data \ "mainFeatures"
+    val keys = features match {
+      case JObject(fields) => fields.map { case (key, _) => key }
+      case _ => List.empty[String]
+    }
+
+    for (key <- keys) {
+      val value = toNumber(((features \ key) \ "value").extractOpt[String].getOrElse("0"))
+
+      key match {
+        case "CFT100" => property.totalSurf = value
+        case "CFT101" => property.coveredSurf = value
+        case "CFT1" => property.rooms = value
+        case "CFT2" => property.bedrooms = value
+        case "CFT3" => property.bathrooms = value
+        case "CFT7" => property.garage = value
+        case _ => //Rest of the keys
+      }
+    }
+
+    // Set data of property type
+    property.setPropertyType((data \ "realEstateType" \ "name").extract[String])
+
+    // Set data of location (barrio, direccion, coordenadas)
+    val postLocation = data \ "postingLocation"
+    property.address = (postLocation \ "address" \ "name").extractOpt[String].getOrElse("")
+
+    if ((postLocation \ "location" \ "label").extract[String] == "BARRIO") {
+      property.barrio = (postLocation \ "location" \ "name").extract[String]
+    } else {
+      property.barrio = (postLocation \ "location" \ "parent" \ "name").extractOpt[String].getOrElse("")
+    }
+
+    // 'postingGeolocation': {'geolocation': {'latitude': -34.58013254297343, 'longitude': -58.39818611513063},
+    val geolocation = postLocation \ "postingGeolocation" \ "geolocation"
+    property.coordenadas = (geolocation \ "latitude").extractOpt[String].getOrElse("0") +
+      "," +
+      (geolocation \ "longitude").extractOpt[String].getOrElse("0")
+
+    property
+  }
+
+  /**
    * Scrapes zonaprop.com.ar and returns a list of properties
+   *
    * @param operation: Operation to scrape (Alquiler, Venta)
    * @return List[Propiedad]: List of properties
   */
   def zonaprop(operation:Operation.Value = Operation.ALQUILER): List[Property] = {
-    //Todo: add log
-    implicit val formats: DefaultFormats.type = DefaultFormats
-
-    val urlZonaProp = "https://www.zonaprop.com.ar"
-    val url = urlZonaProp + "/casas-departamentos-ph-" + operation.toString.toLowerCase + "-capital-federal"
+    val logger = Logger("WebScraper")
+    val currentTime = Calendar.getInstance.getTime.getTime
+    val url = URL_ZONAPROP + "/casas-departamentos-ph-" + operation.toString.toLowerCase + "-capital-federal"
 
     var doc = Jsoup.connect(url + ".html")
       .userAgent("Mozilla")
@@ -81,66 +151,13 @@ object WebScraper{
       val dataList = parseJson(doc.getElementById("preloadedData").data())
 
       for(data <- dataList){
-        val property = new Property()
-
-        property.id = (data \ "postingId").extract[String]
-        property.url = urlZonaProp + (data \ "url").extract[String]
-        property.operation = operation
-
-        //Set data of price (precio, moneda, expensas)
-        val operationTypes = (data \ "priceOperationTypes").extract[JArray].arr
-        for (operationType <- operationTypes) {
-          if ((operationType \ "operationType" \ "name").extract[String].compareToIgnoreCase(operation.toString) == 0) {
-            val price = (operationType \ "prices")(0)
-            property.price = (price \ "amount").extractOpt[Int].getOrElse(0)
-            property.setCurrency((price \ "currency").extractOpt[String].getOrElse("ARS"))
-          }
-        }
-        property.expenses = (data \ "expenses" \ "amount").extractOpt[Int].getOrElse(0)
-
-        // Set data of features (superficie, ambientes, dormitorios, banios, cochera)
-        val features = data \ "mainFeatures"
-        val keys = features match {
-          case JObject(fields) => fields.map { case (key, _) => key }
-          case _ => List.empty[String]
-        }
-
-        for (key <- keys) {
-          val value = toNumber(((features \ key) \ "value").extractOpt[String].getOrElse("0"))
-
-          key match {
-            case "CFT100" => property.totalSurf = value
-            case "CFT101" => property.coveredSurf = value
-            case "CFT1" => property.rooms = value
-            case "CFT2" => property.bedrooms = value
-            case "CFT3" => property.bathrooms = value
-            case "CFT7" => property.garage = value
-            case _ => //Rest of the keys
-          }
-        }
-
-        // Set data of property type
-        property.setPropertyType((data \ "realEstateType" \ "name").extract[String])
-
-        // Set data of location (barrio, direccion, coordenadas)
-        val postLocation = data \ "postingLocation"
-        property.address = (postLocation \ "address" \ "name").extractOpt[String].getOrElse("")
-
-        if ((postLocation \ "location" \ "label").extract[String] == "BARRIO") {
-          property.barrio = (postLocation \ "location" \ "name").extract[String]
-        } else {
-          property.barrio = (postLocation \ "location" \ "parent" \ "name").extractOpt[String].getOrElse("")
-        }
-
-        // 'postingGeolocation': {'geolocation': {'latitude': -34.58013254297343, 'longitude': -58.39818611513063},
-        val geolocation = postLocation \ "postingGeolocation" \ "geolocation"
-        property.coordenadas = (geolocation \ "latitude").extractOpt[String].getOrElse("0") + "," +
-          (geolocation \ "longitude").extractOpt[String].getOrElse("0")
-
+        val property = readPropertyZonaprop(data, operation)
         listProperties.append(property)
       }
       pb.step()
     }
+    pb.close()
+    logger.info("Scraping ZonaProp finished in " + (Calendar.getInstance.getTime.getTime - currentTime)/1000 + " seconds reading a total of " + listProperties.size + " properties")
     listProperties.toList
   }
 
@@ -197,6 +214,8 @@ object WebScraper{
    * @return List[Propiedad]: List of properties
   */
   def argenprop(operation:Operation.Value = Operation.ALQUILER): List[Property] = {
+    val logger = Logger("WebScraper")
+    val currentTime = Calendar.getInstance.getTime.getTime
     val listProperties = new ListBuffer[Property]()
     val browser = JsoupBrowser()
     var url = URL_ARGENPROP + "/departamento-y-casa-y-ph-" + operation.toString.toLowerCase + "-localidad-capital-federal"
@@ -206,7 +225,7 @@ object WebScraper{
       do {
         val doc = browser.get(url)
         if(pb == null) {
-          val href = (doc >> elementList(".pagination__page>a"))
+          val href = doc >> elementList(".pagination__page>a")
           val lastPage = href(href.length - 2).text
 
           pb = new ProgressBarBuilder()
@@ -222,12 +241,14 @@ object WebScraper{
         }
 
         url = URL_ARGENPROP + getNextPageArgenprop(doc)
-        if(toNumber(url)%50 == 0) Thread.sleep(10000) //Sleep 10 seconds every 50 pages
         pb.step()
+        if(toNumber(url)%25 == 0) Thread.sleep(10000) //Sleep 10 seconds every 25 pages
       } while (url != URL_ARGENPROP)
     }catch {
       case e: Exception => println("Error scraping argenprop: " + e.getMessage)
     }
+    pb.close()
+    logger.info("Scraping ZonaProp finished in " + (Calendar.getInstance.getTime.getTime - currentTime) / 1000 + " seconds reading a total of " + listProperties.size + " properties")
     listProperties.toList
   }
 
@@ -245,7 +266,7 @@ object WebScraper{
     do {
       val indexNumber = pageNumber * 48 + 1
       val indexString = if (pageNumber != 0) "_Desde_" + indexNumber + "_NoIndex_True" else "_NoIndex_True"
-      val doc = Jsoup.connect("https://inmuebles.mercadolibre.com.ar/departamentos/alquiler/capital-federal/" + indexString)
+      val doc = Jsoup.connect(URL_MELI + indexString)
         .userAgent("Mozilla")
         .get()
 
@@ -286,7 +307,7 @@ object WebScraper{
       property.address = split(0).strip
       property.barrio = split(1).strip
     } catch {
-      case e: Exception => property.barrio = doc.select(".andes-breadcrumb__item").last.text
+      case _: Exception => property.barrio = doc.select(".andes-breadcrumb__item").last.text
     }
 
     val tableRows = doc.select("tr")
@@ -316,6 +337,8 @@ object WebScraper{
    * @return List[Propiedad]: List of properties
   */
   def mercadolibre(): List[Property] = {
+    val logger = Logger("WebScraper")
+    val currentTime = Calendar.getInstance.getTime.getTime
     val listProperties = new ListBuffer[Property]()
     val links = getPublicationLinksMELI
     val session = Jsoup.newSession().userAgent("Mozilla")
@@ -331,7 +354,8 @@ object WebScraper{
       if (links.indexOf(link)%50 == 0) Thread.sleep(5000) //Sleep 5 seconds every 50 pages
       pb.step()
     }
-
+    pb.close()
+    logger.info("Scraping ZonaProp finished in " + (Calendar.getInstance.getTime.getTime - currentTime) / 1000 + " seconds reading a total of " + listProperties.size + " properties")
     listProperties.toList
   }
 }
