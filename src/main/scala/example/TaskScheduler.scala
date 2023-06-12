@@ -89,7 +89,8 @@ object TaskScheduler{
   }
 
   def main(args: Array[String]): Unit = {
+    //updateDB(Operation.ALQUILER, Page.ARGENPROP)
     updateDB(Operation.ALQUILER, Page.ZONAPROP)
-    updateDB(Operation.VENTA, Page.ZONAPROP)
+    //updateDB(Operation.VENTA, Page.ZONAPROP)
   }
 }

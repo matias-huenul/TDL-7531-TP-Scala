@@ -123,10 +123,8 @@ object WebScraper{
     val logger = Logger("WebScraper")
     val currentTime = Calendar.getInstance.getTime.getTime
     val url = URL_ZONAPROP + "/casas-departamentos-ph-" + operation.toString.toLowerCase + "-capital-federal"
-
-    var doc = Jsoup.connect(url + ".html")
-      .userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.152 Safari/537.36")
-      .get()
+    val session = Jsoup.newSession().userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.152 Safari/537.36")
+    var doc = session.newRequest().url(url + ".html").get()
 
     val listProperties = new ListBuffer[Property]()
     val numberOfPages = getNumberPagesZonaprop(doc)
@@ -140,7 +138,7 @@ object WebScraper{
     // 461 seconds for 277 page y 5537 properties, 1.66 sec per page
     for(i <- 1 to numberOfPages){
       try{
-        doc = Jsoup.connect(url + "-pagina-" + i + ".html").userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.152 Safari/537.36").get()
+        doc = session.newRequest().url(url + "-pagina-" + i + ".html").get()
         val dataList = parseJson(doc.getElementById("preloadedData").data())
 
         for (data <- dataList) {
@@ -212,7 +210,7 @@ object WebScraper{
     val currentTime = Calendar.getInstance.getTime.getTime
     val listProperties = new ListBuffer[Property]()
     val browser = JsoupBrowser()
-    var url = URL_ARGENPROP + "/departamento-y-casa-y-ph-" + operation.toString.toLowerCase + "-localidad-capital-federal"
+    var url = URL_ARGENPROP + "/departamento-y-casa-" + operation.toString.toLowerCase + "-localidad-capital-federal"
     var pb: ProgressBar = null
 
     try{
@@ -237,6 +235,7 @@ object WebScraper{
         url = URL_ARGENPROP + getNextPageArgenprop(doc)
         pb.step()
         if(toNumber(url)%25 == 0) Thread.sleep(10000) //Sleep 10 seconds every 25 pages
+        if(toNumber(url) == 99) Thread.sleep(60000)
       } while (url != URL_ARGENPROP)
     }catch {
       case e: Exception => logger.error("Error scraping Argenprop: " + e.getMessage)
