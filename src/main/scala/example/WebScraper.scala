@@ -146,13 +146,16 @@ object WebScraper{
 
     // 461 seconds for 277 page y 5537 properties, 1.66 sec per page
     for(i <- 1 to numberOfPages){
-      doc = Jsoup.connect(url + "-pagina-" + i + ".html").userAgent("Mozilla").get()
+      try{
+        doc = Jsoup.connect(url + "-pagina-" + i + ".html").userAgent("Mozilla").get()
+        val dataList = parseJson(doc.getElementById("preloadedData").data())
 
-      val dataList = parseJson(doc.getElementById("preloadedData").data())
-
-      for(data <- dataList){
-        val property = readPropertyZonaprop(data, operation)
-        listProperties.append(property)
+        for (data <- dataList) {
+          val property = readPropertyZonaprop(data, operation)
+          listProperties.append(property)
+        }
+      }catch {
+        case e: Exception => logger.error("Error scraping ZonaProp page " + i + ": " + e.getMessage)
       }
       pb.step()
     }
@@ -245,7 +248,7 @@ object WebScraper{
         if(toNumber(url)%25 == 0) Thread.sleep(10000) //Sleep 10 seconds every 25 pages
       } while (url != URL_ARGENPROP)
     }catch {
-      case e: Exception => println("Error scraping argenprop: " + e.getMessage)
+      case e: Exception => logger.error("Error scraping Argenprop: " + e.getMessage)
     }
     pb.close()
     logger.info("Scraping ZonaProp finished in " + (Calendar.getInstance.getTime.getTime - currentTime) / 1000 + " seconds reading a total of " + listProperties.size + " properties")
@@ -349,8 +352,12 @@ object WebScraper{
       .setStyle(ProgressBarStyle.ASCII)
       .build()
     for(link <- links){
-      val property = scrapePropertyMELI(link,session)
-      listProperties.append(property)
+      try{
+        val property = scrapePropertyMELI(link, session)
+        listProperties.append(property)
+      }catch {
+        case e: Exception => logger.error("Error scraping MELI: " + e.getMessage)
+      }
       if (links.indexOf(link)%50 == 0) Thread.sleep(5000) //Sleep 5 seconds every 50 pages
       pb.step()
     }
