@@ -64,7 +64,6 @@ object WebScraper{
     val property = new Property(page = Page.ZONAPROP)
 
     property.url = URL_ZONAPROP + (data \ "url").extract[String]
-    property.operation = operation
 
     //Set data of price (precio, moneda, expensas)
     val operationTypes = (data \ "priceOperationTypes").extract[JArray].arr
@@ -126,7 +125,7 @@ object WebScraper{
     val url = URL_ZONAPROP + "/casas-departamentos-ph-" + operation.toString.toLowerCase + "-capital-federal"
 
     var doc = Jsoup.connect(url + ".html")
-      .userAgent("Mozilla")
+      .userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.152 Safari/537.36")
       .get()
 
     val listProperties = new ListBuffer[Property]()
@@ -141,7 +140,7 @@ object WebScraper{
     // 461 seconds for 277 page y 5537 properties, 1.66 sec per page
     for(i <- 1 to numberOfPages){
       try{
-        doc = Jsoup.connect(url + "-pagina-" + i + ".html").userAgent("Mozilla").get()
+        doc = Jsoup.connect(url + "-pagina-" + i + ".html").userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.152 Safari/537.36").get()
         val dataList = parseJson(doc.getElementById("preloadedData").data())
 
         for (data <- dataList) {
@@ -154,7 +153,7 @@ object WebScraper{
       pb.step()
     }
     pb.close()
-    logger.info("Scraping ZonaProp"+ operation +" finished in " + (Calendar.getInstance.getTime.getTime - currentTime)/1000 + " seconds reading a total of " + listProperties.size + " properties")
+    logger.info("Scraping ZonaProp "+ operation +" finished in " + (Calendar.getInstance.getTime.getTime - currentTime)/1000 + " seconds reading a total of " + listProperties.size + " properties")
     listProperties.toList
   }
 
@@ -166,15 +165,13 @@ object WebScraper{
   /**
    * Scrapes argenprop.com and returns a list of properties
    * @param element: Element to scrape
-   * @param operation: Operation to scrape (Alquiler, Venta)
    * @return List[Propiedad]: List of properties
   */
-  private def scrapePropertyArgenprop(element: Element, operation: Operation.Value): Property ={
+  private def scrapePropertyArgenprop(element: Element): Property ={
     val property = new Property(page = Page.ARGENPROP)
 
     property.url = URL_ARGENPROP + (element >> "a").head.attr("href")
     property.setPropertyType(property.url.split("/")(1).split("-")(0))
-    property.operation = operation
 
     val cardPrice = (element >> "p.card__price").head
     if ((cardPrice >?> ".card__noprice").head.isEmpty) {
@@ -234,7 +231,7 @@ object WebScraper{
         val elements = doc >> "div.listing__item"
 
         for (element <- elements) {
-          listProperties.append(scrapePropertyArgenprop(element, operation))
+          listProperties.append(scrapePropertyArgenprop(element))
         }
 
         url = URL_ARGENPROP + getNextPageArgenprop(doc)
@@ -245,7 +242,7 @@ object WebScraper{
       case e: Exception => logger.error("Error scraping Argenprop: " + e.getMessage)
     }
     pb.close()
-    logger.info("Scraping ZonaProp finished in " + (Calendar.getInstance.getTime.getTime - currentTime) / 1000 + " seconds reading a total of " + listProperties.size + " properties")
+    logger.info("Scraping Argenprop finished in " + (Calendar.getInstance.getTime.getTime - currentTime) / 1000 + " seconds reading a total of " + listProperties.size + " properties")
     listProperties.toList
   }
 
@@ -356,7 +353,7 @@ object WebScraper{
       pb.step()
     }
     pb.close()
-    logger.info("Scraping ZonaProp finished in " + (Calendar.getInstance.getTime.getTime - currentTime) / 1000 + " seconds reading a total of " + listProperties.size + " properties")
+    logger.info("Scraping MELI finished in " + (Calendar.getInstance.getTime.getTime - currentTime) / 1000 + " seconds reading a total of " + listProperties.size + " properties")
     listProperties.toList
   }
 }

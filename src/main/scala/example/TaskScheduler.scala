@@ -1,8 +1,10 @@
 package example
 
+import com.typesafe.scalalogging.Logger
 import example.utils.{Operation, Page}
 
 import java.sql.{Connection, DriverManager, PreparedStatement}
+import java.util.Calendar
 
 object TaskScheduler{
   def getConnection(): Connection = {
@@ -65,14 +67,29 @@ object TaskScheduler{
     }
   }
 
-  def updateZonaprop(operation: Operation.Value)={
-    val prop = WebScraper.zonaprop(operation)
-    deletePropertiesWithPage(operation, Page.ZONAPROP)
-    insertProperties(prop, operation)
+  def updateDB(operation: Operation.Value = Operation.ALQUILER, page:Page.Value)={
+    val logger = Logger("TaskScheduler")
+    val currentTime =  Calendar.getInstance.getTime.getTime
+    var prop = List[Property]()
+    page match {
+      case Page.ZONAPROP => prop = WebScraper.zonaprop(operation)
+      case Page.ARGENPROP => prop = WebScraper.argenprop(operation)
+      case Page.MELI => prop = WebScraper.mercadolibre ()
+      case _ => println("No se reconoce la pagina")
+    }
+
+    try {
+      deletePropertiesWithPage(operation, page)
+      insertProperties(prop, operation)
+    } catch {
+      case e: Exception => println("Error al actualizar la base de datos")
+    }
+
+    logger.info("Database properties_" + operation.toString.toLowerCase +" updated in " + (Calendar.getInstance.getTime.getTime - currentTime)/1000 + " seconds for page " + page.toString)
   }
 
   def main(args: Array[String]): Unit = {
-    updateZonaprop(Operation.ALQUILER)
-    updateZonaprop(Operation.VENTA)
+    updateDB(Operation.ALQUILER, Page.ZONAPROP)
+    updateDB(Operation.VENTA, Page.ZONAPROP)
   }
 }
