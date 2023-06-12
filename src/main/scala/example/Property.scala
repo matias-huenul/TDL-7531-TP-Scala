@@ -1,6 +1,6 @@
 package example
 
-import example.utils.{Currency, Operation, PropertyType}
+import example.utils.{Currency, Operation, Page, PropertyType}
 
 class Property(
                   var url: String = "",
@@ -15,9 +15,9 @@ class Property(
                   var bedrooms: Int = 0,
                   var bathrooms: Int = 0,
                   var address: String = "",
-                  var coordenadas: String = "",
                   var barrio: String = "",
-                  var garage: Int = 0) {
+                  var garage: Int = 0,
+                  var page: Page.Value = Page.ZONAPROP) {
 
   def setOperation(s: String): Unit = {
     operation = Operation.fromString(s)
@@ -46,8 +46,7 @@ class Property(
     "    Cochera " + garage + "\n" +
     "  Dirceccion: \n" +
     "    Direccion " + address +
-    "    Barrio " + barrio +
-    "    Coordenadas " + coordenadas
+    "    Barrio " + barrio
 
   }
 
