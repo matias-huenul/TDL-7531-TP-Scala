@@ -35,7 +35,19 @@ object Database {
   )(implicit ec: ExecutionContext): Future[List[Map[String, String]]] = {
     val apiKey = sys.env("SUPABASE_API_KEY")
     val baseUrl = sys.env("SUPABASE_API_URL") + "/rest/v1/properties?select=l3,rooms,price,currency,property_type,operation_type&limit=3&"
-    val url = baseUrl + makeQueryString(args, false)
+
+    val argsMapping = Map(
+      "ubicacion" -> "l3",
+      "ambientes" -> "rooms",
+      "precio" -> "price",
+      "moneda" -> "currency",
+      "tipo" -> "property_type",
+      "operacion" -> "operation_type",
+    )
+
+    val argsMapped = args.map { case (key, value) => (argsMapping(key), value) }
+
+    val url = baseUrl + makeQueryString(argsMapped, false)
 
     println(s"URL: $url")
 
@@ -84,8 +96,17 @@ object Database {
     // SELECT * from estimate_property_value('Recoleta')
 
     val apiKey = sys.env("SUPABASE_API_KEY")
-    val baseUrl = sys.env("SUPABASE_API_URL") + "/rest/v1/rpc/estimate_property_value?"    
-    val url = baseUrl + makeQueryString(args, true)
+    val baseUrl = sys.env("SUPABASE_API_URL") + "/rest/v1/rpc/estimate_property_value?"
+
+    val argsMapping = Map(
+      "ubicacion" -> "_location",
+      "ambientes" -> "_rooms",
+      "tipo" -> "_property_type",
+    )
+
+    val argsMapped = args.map { case (key, value) => (argsMapping(key), value) }
+
+    val url = baseUrl + makeQueryString(argsMapped, true)
 
     println(s"URL: $url")
 
