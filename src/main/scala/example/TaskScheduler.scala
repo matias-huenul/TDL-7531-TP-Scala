@@ -23,10 +23,11 @@ object TaskScheduler{
     val connection = getConnection()
 
     try {
-      val query = "DELETE FROM properties_"+ operation.toString.toLowerCase +" WHERE page = ?"
+      val query = "DELETE FROM properties_scraped WHERE page = ? AND operation = ?"
       val statement = connection.prepareStatement(query)
 
       statement.setInt(1, page.id)
+      statement.setString(2, operation.toString)
 
       statement.executeUpdate()
       statement.close()
@@ -39,7 +40,7 @@ object TaskScheduler{
     val connection = getConnection()
 
     try {
-      val query = "INSERT INTO properties_"+ operation.toString.toLowerCase +" (url, type, price, currency, expenses, total_surf, covered_surf, rooms, bedrooms, bathrooms, address, barrio, garage, page) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+      val query = "INSERT INTO properties_scraped (url, type, price, currency, expenses, total_surf, covered_surf, rooms, bedrooms, bathrooms, address, barrio, garage, page, operation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
       val statement = connection.prepareStatement(query)
 
       for (property <- properties) {
@@ -57,6 +58,7 @@ object TaskScheduler{
         statement.setString(12, property.barrio)
         statement.setInt(13, property.garage)
         statement.setInt(14, property.page.id)
+        statement.setString(15, operation.toString)
 
         statement.executeUpdate()
       }
@@ -82,7 +84,7 @@ object TaskScheduler{
       deletePropertiesWithPage(operation, page)
       insertProperties(prop, operation)
     } catch {
-      case e: Exception => println("Error al actualizar la base de datos")
+      case e: Exception => println("Error al actualizar la base de datos" + e.printStackTrace())
     }
 
     logger.info("Database properties_" + operation.toString.toLowerCase +" updated in " + (Calendar.getInstance.getTime.getTime - currentTime)/1000 + " seconds for page " + page.toString)
@@ -90,7 +92,9 @@ object TaskScheduler{
 
   def main(args: Array[String]): Unit = {
     //updateDB(Operation.ALQUILER, Page.ARGENPROP)
-    updateDB(Operation.ALQUILER, Page.ZONAPROP)
+    //updateDB(Operation.VENTA, Page.ARGENPROP)
+    //updateDB(Operation.ALQUILER, Page.ZONAPROP)
     //updateDB(Operation.VENTA, Page.ZONAPROP)
+    //updateDB(Operation.ALQUILER, Page.MELI)
   }
 }

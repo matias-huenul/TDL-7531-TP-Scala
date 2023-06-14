@@ -201,7 +201,7 @@ object WebScraper{
 
   /**
    * Scrapes argenprop.com and returns a list of properties
-   * argenprop has a limit of 100 pages before it returns an error
+   * argenprop has a limit of 99 pages before it returns an error
    * @param operation: Operation to scrape (Alquiler, Venta)
    * @return List[Propiedad]: List of properties
   */
@@ -218,11 +218,11 @@ object WebScraper{
         val doc = browser.get(url)
         if(pb == null) {
           val href = doc >> elementList(".pagination__page>a")
-          val lastPage = href(href.length - 2).text
+          val lastPage = toNumber(href(href.length - 2).text)
 
           pb = new ProgressBarBuilder()
             .setTaskName("Scraping argenprop")
-            .setInitialMax(toNumber(lastPage))
+            .setInitialMax(99.min(lastPage))
             .setStyle(ProgressBarStyle.ASCII)
             .build()
         }
@@ -235,8 +235,7 @@ object WebScraper{
         url = URL_ARGENPROP + getNextPageArgenprop(doc)
         pb.step()
         if(toNumber(url)%25 == 0) Thread.sleep(10000) //Sleep 10 seconds every 25 pages
-        if(toNumber(url) == 99) Thread.sleep(60000)
-      } while (url != URL_ARGENPROP)
+      } while (url != URL_ARGENPROP && toNumber(url) < 100)
     }catch {
       case e: Exception => logger.error("Error scraping Argenprop: " + e.getMessage)
     }
@@ -297,7 +296,7 @@ object WebScraper{
     try {
       val locationString = doc.select(".ui-vip-location").first.text
       val split = locationString.split(",")
-      property.address = split(0).strip
+      property.address = split(0).strip.replace("Ubicación", "")
       property.barrio = split(1).strip
     } catch {
       case _: Exception => property.barrio = doc.select(".andes-breadcrumb__item").last.text
