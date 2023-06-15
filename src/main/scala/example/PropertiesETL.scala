@@ -47,6 +47,7 @@ object PropertiesETL {
             })
 
             println("Updating csv table")
+            //TODO: fix the overwrite mode because it's not working as expected
             uploadedCsv.withColumn("loaded", when($"loaded" === false, true).otherwise($"loaded"))
                 .write.format("jdbc").mode("overwrite").option("driver", "org.postgresql.Driver")
                 .option("url", "jdbc:postgresql://db.igdnlrrqfnwivrfldsyy.supabase.co:5432/postgres")
