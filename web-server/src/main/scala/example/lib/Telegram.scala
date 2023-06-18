@@ -39,7 +39,7 @@ object Telegram {
     text: String
   )(implicit mat: Materializer): Future[HttpResponse] = {
     val telegramApiKey = sys.env("TELEGRAM_API_TOKEN")
-    val message = Map("chat_id" -> chatId, "text" -> text)
+    val message = Map("chat_id" -> chatId, "text" -> text, "parse_mode" -> "Markdown", "disable_web_page_preview" -> true)
 
     val telegramRequest = HttpRequest(
       method = HttpMethods.POST,

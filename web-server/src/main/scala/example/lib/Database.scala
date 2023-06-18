@@ -34,20 +34,30 @@ object Database {
     args: Map[String, String]
   )(implicit ec: ExecutionContext): Future[List[Map[String, String]]] = {
     val apiKey = sys.env("SUPABASE_API_KEY")
-    val baseUrl = sys.env("SUPABASE_API_URL") + "/rest/v1/properties?select=l3,rooms,price,currency,property_type,operation_type&limit=3&"
+    val baseUrl = sys.env("SUPABASE_API_URL") + "/rest/v1/properties_scraped?select=barrio,rooms,price,currency,type,operation,url&limit=3&"
 
     val argsMapping = Map(
-      "ubicacion" -> "l3",
+      "ubicacion" -> "barrio",
       "ambientes" -> "rooms",
       "precio" -> "price",
       "moneda" -> "currency",
-      "tipo" -> "property_type",
-      "operacion" -> "operation_type",
+      "tipo" -> "type",
+      "operacion" -> "operation",
     )
 
     val argsMapped = args.map { case (key, value) => (argsMapping(key), value) }
 
-    val url = baseUrl + makeQueryString(argsMapped, false)
+    val upperValues = List("type", "operation")
+
+    val argsMappedUpper = argsMapped.map { case (key, value) =>
+      if (upperValues.contains(key)) {
+        (key, value.toUpperCase)
+      } else {
+        (key, value)
+      }
+    }
+
+    val url = baseUrl + makeQueryString(argsMappedUpper, false)
 
     println(s"URL: $url")
 
@@ -102,6 +112,7 @@ object Database {
       "ubicacion" -> "_location",
       "ambientes" -> "_rooms",
       "tipo" -> "_property_type",
+      "superficie" -> "_surface_total",
     )
 
     val argsMapped = args.map { case (key, value) => (argsMapping(key), value) }

@@ -92,19 +92,19 @@ object Commands {
       """Los comandos disponibles son:
         |
         |/buscar - Buscar propiedades en venta o alquiler
-        |  Parámetros:
+        |  *Parámetros:*
         |    - ubicacion: Ubicación de la propiedad
-        |    - tipo: Tipo de propiedad (casa, departamento, local, terreno)
+        |    - tipo: Tipo de propiedad (casa, departamento, ph)
         |    - operacion: Tipo de operación (venta, alquiler)
-        |  Ejemplo de uso:
-        |    /buscar ubicacion=Palermo, tipo=departamento, operacion=venta
+        |  *Ejemplo de uso:*
+        |    /buscar ubicacion=Palermo, operacion=venta
         |
         |/tasar - Obtener un valor estimado de tu propiedad
-        |  Parámetros:
+        |  *Parámetros:*
         |    - ubicacion: Ubicación de la propiedad
-        |    - tipo: Tipo de propiedad (casa, departamento, local, terreno)
+        |    - tipo: Tipo de propiedad (casa, departamento, ph)
         |    - superficie: Superficie de la propiedad
-        |  Ejemplo de uso:
+        |  *Ejemplo de uso:*
         |    /tasar ubicacion=Palermo, tipo=departamento, superficie=50""".stripMargin
     }
   }
@@ -119,16 +119,18 @@ object Commands {
   )(implicit ec: ExecutionContext): Future[String] = {
     println(s"Searching properties with args: $args")
     Database.searchProperties(args).map { properties =>
-      properties.map { property =>
-        val operationType = property("operation_type")
-        val propertyType = property("property_type")
-        val l3 = property("l3")
+      val resultString = properties.map { property =>
+        val propertyType = property("type").toLowerCase.capitalize
+        val operationType = property("operation").toLowerCase
+        val l3 = property("barrio")
         val rooms = property("rooms")
-        val price = property("price")
+        val price = NumberFormat.getNumberInstance.format(property("price").toInt)
         val currency = property("currency")
-        s"$operationType $propertyType en $l3, $rooms ambientes, $price $currency"
+        val url = property("url")
+        s"- [$propertyType en $operationType en $l3 de $rooms ambientes: $price $currency]($url)"
       }
       .mkString("\n")
+      s"Resultados de la búsqueda:\n\n$resultString"
     }
   }
 
@@ -157,7 +159,9 @@ object Commands {
         println(s"Estimated values in ARS: $estimatedValuesInArs")
         val estimatedValue = (estimatedValuesInArs.sum / estimatedValuesInArs.length).toInt
         val estimatedValueString = NumberFormat.getNumberInstance.format(estimatedValue)
-        s"El valor estimado de tu propiedad es $estimatedValueString ARS"
+        val estimatedValueUsd = (estimatedValue / conversion).toInt
+        val estimatedValueUsdString = NumberFormat.getNumberInstance.format(estimatedValueUsd)
+        s"El valor estimado de tu propiedad es $estimatedValueString ARS ($estimatedValueUsdString USD)"
       }
     }
   }
