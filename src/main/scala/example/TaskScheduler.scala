@@ -7,7 +7,7 @@ import java.util.Calendar
 
 object TaskScheduler{
   def updateDB(operation: Operation.Value = Operation.ALQUILER, page:Page.Value)={
-    //val logger = Logger("TaskScheduler")
+    val logger = Logger("TaskScheduler")
     val currentTime =  Calendar.getInstance.getTime.getTime
     var prop = List[Property]()
     page match {
@@ -24,7 +24,7 @@ object TaskScheduler{
       case e: Exception => println("Error al actualizar la base de datos" + e.printStackTrace())
     }
 
-    //logger.info("Database properties_" + operation.toString.toLowerCase +" updated in " + (Calendar.getInstance.getTime.getTime - currentTime)/1000 + " seconds for page " + page.toString)
+    logger.info("Database properties_" + operation.toString.toLowerCase +" updated in " + (Calendar.getInstance.getTime.getTime - currentTime)/1000 + " seconds for page " + page.toString)
   }
 
   def scheduler() ={
