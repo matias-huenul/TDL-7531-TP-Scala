@@ -1,6 +1,6 @@
-package example
+package etl
 
-import example.utils.{Currency, Operation, Page, PropertyType}
+import etl.utils.{Currency, Operation, Page, PropertyType}
 
 class Property(
                   var url: String = "",

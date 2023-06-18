@@ -1,4 +1,4 @@
-package example.utils
+package etl.utils
 
 object Utils {
   def test(): Unit = {

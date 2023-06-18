@@ -1,4 +1,4 @@
-package example.utils
+package etl.utils
 
 object Operation extends Enumeration {
   val VENTA: Operation.Value = Value("VENTA")

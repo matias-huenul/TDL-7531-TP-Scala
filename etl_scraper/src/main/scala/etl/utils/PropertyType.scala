@@ -1,4 +1,4 @@
-package example.utils
+package etl.utils
 
 object PropertyType extends Enumeration{
   val DEPARTAMENTO: PropertyType.Value = Value("DEPARTAMENTO")

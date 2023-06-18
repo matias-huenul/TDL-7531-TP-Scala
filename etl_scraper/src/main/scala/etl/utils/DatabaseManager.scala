@@ -1,7 +1,7 @@
-package example.utils
+package etl.utils
 
 import com.typesafe.scalalogging.Logger
-import example.Property
+import etl.Property
 
 import java.sql.{Connection, DriverManager}
 
@@ -40,7 +40,7 @@ object DatabaseManager {
     val connection = getConnection()
 
     try {
-      val query = "INSERT INTO properties_scraped (url, type, price, currency, expenses, total_surf, covered_surf, rooms, bedrooms, bathrooms, address, barrio, garage, page, operation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+      val query = "INSERT INTO properties_scraped (url, property_type, price, currency, expenses, total_surf, covered_surf, rooms, bedrooms, bathrooms, address, neighborhood, garage, page, operation_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
       val statement = connection.prepareStatement(query)
 
       for (property <- properties) {

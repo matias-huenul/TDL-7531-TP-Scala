@@ -1,7 +1,7 @@
-package example
+package etl
 
 import com.typesafe.scalalogging.Logger
-import example.utils.{Operation, Page}
+import etl.utils.{Operation, Page}
 import io.netty.util.Timeout
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
 import net.ruippeixotog.scalascraper.dsl.DSL.Extract._

@@ -1,4 +1,4 @@
-package example.utils
+package etl.utils
 
 object Currency extends Enumeration {
   val ARS: Currency.Value = Value("ARS")

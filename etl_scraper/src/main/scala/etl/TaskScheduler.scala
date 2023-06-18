@@ -1,7 +1,7 @@
-package example
+package etl
 
 import com.typesafe.scalalogging.Logger
-import example.utils.{Operation, Page, DatabaseManager => DB}
+import etl.utils.{Operation, Page, DatabaseManager => DB}
 
 import java.util.Calendar
 
