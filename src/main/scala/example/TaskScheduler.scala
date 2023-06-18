@@ -1,76 +1,13 @@
 package example
 
 import com.typesafe.scalalogging.Logger
-import example.utils.{Operation, Page}
+import example.utils.{Operation, Page, DatabaseManager => DB}
 
-import java.sql.{Connection, DriverManager, PreparedStatement}
 import java.util.Calendar
 
 object TaskScheduler{
-  def getConnection(): Connection = {
-    val url = "jdbc:postgresql://db.igdnlrrqfnwivrfldsyy.supabase.co:5432/postgres"
-    val username = "postgres"
-    val password = "+?gZMK.KFtxC@3x"
-
-    // Register the PostgreSQL driver
-    Class.forName("org.postgresql.Driver")
-
-    // Create the connection
-    DriverManager.getConnection(url, username, password)
-  }
-
-  def deletePropertiesWithPage(operation:Operation.Value,page: Page.Value): Unit = {
-    val connection = getConnection()
-
-    try {
-      val query = "DELETE FROM properties_scraped WHERE page = ? AND operation = ?"
-      val statement = connection.prepareStatement(query)
-
-      statement.setInt(1, page.id)
-      statement.setString(2, operation.toString)
-
-      statement.executeUpdate()
-      statement.close()
-    } finally {
-      connection.close()
-    }
-  }
-
-  def insertProperties(properties: List[Property], operation: Operation.Value): Unit = {
-    val connection = getConnection()
-
-    try {
-      val query = "INSERT INTO properties_scraped (url, type, price, currency, expenses, total_surf, covered_surf, rooms, bedrooms, bathrooms, address, barrio, garage, page, operation) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-      val statement = connection.prepareStatement(query)
-
-      for (property <- properties) {
-        statement.setString(1, property.url)
-        statement.setString(2, property.propType.toString)
-        statement.setInt(3, property.price)
-        statement.setString(4, property.currency.toString)
-        statement.setInt(5, property.expenses)
-        statement.setInt(6, property.totalSurf)
-        statement.setInt(7, property.coveredSurf)
-        statement.setInt(8, property.rooms)
-        statement.setInt(9, property.bedrooms)
-        statement.setInt(10, property.bathrooms)
-        statement.setString(11, property.address)
-        statement.setString(12, property.barrio)
-        statement.setInt(13, property.garage)
-        statement.setInt(14, property.page.id)
-        statement.setString(15, operation.toString)
-
-        statement.executeUpdate()
-      }
-
-      statement.close()
-    } finally {
-      connection.close()
-    }
-  }
-
   def updateDB(operation: Operation.Value = Operation.ALQUILER, page:Page.Value)={
-    val logger = Logger("TaskScheduler")
+    //val logger = Logger("TaskScheduler")
     val currentTime =  Calendar.getInstance.getTime.getTime
     var prop = List[Property]()
     page match {
@@ -81,20 +18,42 @@ object TaskScheduler{
     }
 
     try {
-      deletePropertiesWithPage(operation, page)
-      insertProperties(prop, operation)
+      DB.deletePropertiesWithPage(operation, page)
+      DB.insertProperties(prop, operation)
     } catch {
       case e: Exception => println("Error al actualizar la base de datos" + e.printStackTrace())
     }
 
-    logger.info("Database properties_" + operation.toString.toLowerCase +" updated in " + (Calendar.getInstance.getTime.getTime - currentTime)/1000 + " seconds for page " + page.toString)
+    //logger.info("Database properties_" + operation.toString.toLowerCase +" updated in " + (Calendar.getInstance.getTime.getTime - currentTime)/1000 + " seconds for page " + page.toString)
+  }
+
+  def scheduler() ={
+    // Schedule to update the db every 7 days for Alquiler
+    val schedulerAlquiler = new java.util.Timer()
+    val taskAlquiler = new java.util.TimerTask {
+      def run() = {
+        updateDB(Operation.ALQUILER, Page.ARGENPROP)
+        updateDB(Operation.ALQUILER, Page.ZONAPROP)
+        updateDB(Operation.ALQUILER, Page.MELI)
+      }
+    }
+    schedulerAlquiler.schedule(taskAlquiler, 0L, 1000L * 60L * 60L * 24L * 7L)
+
+    // Schedule to update the db every 30 days for Ventas
+    val schedulerVenta = new java.util.Timer()
+    val taskVenta = new java.util.TimerTask {
+      def run() = {
+        updateDB(Operation.VENTA, Page.ARGENPROP)
+        updateDB(Operation.VENTA, Page.ZONAPROP)
+      }
+    }
+    schedulerVenta.schedule(taskVenta, 0L, 1000L * 60L * 60L * 24L * 30L)
   }
 
   def main(args: Array[String]): Unit = {
-    //updateDB(Operation.ALQUILER, Page.ARGENPROP)
-    //updateDB(Operation.VENTA, Page.ARGENPROP)
-    //updateDB(Operation.ALQUILER, Page.ZONAPROP)
-    //updateDB(Operation.VENTA, Page.ZONAPROP)
-    //updateDB(Operation.ALQUILER, Page.MELI)
+    scheduler()
+    while (true) {
+      Thread.sleep(1000)
+    }
   }
 }

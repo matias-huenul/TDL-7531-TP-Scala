@@ -20,10 +20,12 @@ object WebScraper{
   private val URL_ARGENPROP = "https://www.argenprop.com"
   private val URL_MELI = "https://inmuebles.mercadolibre.com.ar/departamentos/alquiler/capital-federal/"
   val URL_ZONAPROP = "https://www.zonaprop.com.ar"
+  val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3\""
+  val logger: Logger = Logger("WebScraper")
 
   /**
    * Get all the numbers from a string
-   * @param s String: A string with the numbers
+   * @param s String: A string with the numbers asda sdwda
    * @return Int: The numbers of the string in a integer
    */
   private def toNumber(s: String): Int = {
@@ -120,11 +122,11 @@ object WebScraper{
    * @return List[Propiedad]: List of properties
   */
   def zonaprop(operation:Operation.Value = Operation.ALQUILER): List[Property] = {
-    val logger = Logger("WebScraper")
     val currentTime = Calendar.getInstance.getTime.getTime
     val url = URL_ZONAPROP + "/casas-departamentos-ph-" + operation.toString.toLowerCase + "-capital-federal"
-    val session = Jsoup.newSession().userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.152 Safari/537.36")
-    var doc = session.newRequest().url(url + ".html").get()
+    val session = Jsoup.newSession().referrer("https://www.google.com").userAgent(USER_AGENT)
+
+    var doc = session.newRequest().url("https://www.zonaprop.com.ar/casas-departamentos-ph-alquiler-capital-federal-pagina-2.html").get()
 
     val listProperties = new ListBuffer[Property]()
     val numberOfPages = getNumberPagesZonaprop(doc)
@@ -149,6 +151,7 @@ object WebScraper{
         case e: Exception => logger.error("Error scraping ZonaProp page " + i + ": " + e.getMessage)
       }
       pb.step()
+      if(i%50 == 0) Thread.sleep(10000)
     }
     pb.close()
     logger.info("Scraping ZonaProp "+ operation +" finished in " + (Calendar.getInstance.getTime.getTime - currentTime)/1000 + " seconds reading a total of " + listProperties.size + " properties")
@@ -206,7 +209,6 @@ object WebScraper{
    * @return List[Propiedad]: List of properties
   */
   def argenprop(operation:Operation.Value = Operation.ALQUILER): List[Property] = {
-    val logger = Logger("WebScraper")
     val currentTime = Calendar.getInstance.getTime.getTime
     val listProperties = new ListBuffer[Property]()
     val browser = JsoupBrowser()
@@ -259,7 +261,7 @@ object WebScraper{
       val indexNumber = pageNumber * 48 + 1
       val indexString = if (pageNumber != 0) "_Desde_" + indexNumber + "_NoIndex_True" else "_NoIndex_True"
       val doc = Jsoup.connect(URL_MELI + indexString)
-        .userAgent("Mozilla")
+        .userAgent(USER_AGENT)
         .get()
 
       elements.addAll(doc.select("div.ui-search-item__group--title>a.ui-search-link"))
@@ -329,7 +331,6 @@ object WebScraper{
    * @return List[Propiedad]: List of properties
   */
   def mercadolibre(): List[Property] = {
-    val logger = Logger("WebScraper")
     val currentTime = Calendar.getInstance.getTime.getTime
     val listProperties = new ListBuffer[Property]()
     val links = getPublicationLinksMELI
