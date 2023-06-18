@@ -1,0 +1,13 @@
+services:
+  scala:
+    build:
+      context: ..
+      args:
+        USER_NAME: docker
+        GROUP_NAME: docker
+        USER_ID: ${UID}
+        GROUP_ID: ${GID}
+    hostname: scala
+    volumes:
+      - .:/home/docker/app
+    user: ${UID}:${GID}
