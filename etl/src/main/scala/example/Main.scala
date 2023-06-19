@@ -9,7 +9,7 @@ import org.apache.spark.sql.{SparkSession, DataFrame}
 import example.utils.Utils
 import example.PropertiesETL
 
-object Hello extends App {
+object Main extends App {
   println("Starting ETL")
   PropertiesETL.propertiesDataUpdate()
 
