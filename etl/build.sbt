@@ -13,6 +13,8 @@ lazy val root = (project in file("."))
     libraryDependencies += "org.apache.spark" %% "spark-core" % "3.4.0" % "provided",
     libraryDependencies += "org.apache.spark" %% "spark-sql" % "3.4.0" % "provided",
     libraryDependencies += "org.postgresql" % "postgresql" % "42.6.0",
+    libraryDependencies +=  "org.scalaj" %% "scalaj-http" % "2.4.2",
+    libraryDependencies += "org.json4s" %% "json4s-native" % "3.6.7",
   )
 
 assemblyMergeStrategy in assembly := {

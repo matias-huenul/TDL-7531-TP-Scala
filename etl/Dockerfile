@@ -9,7 +9,7 @@ RUN apt-get update
 RUN apt-get install -y curl vim zip unzip
 RUN curl https://downloads.lightbend.com/scala/2.13.10/scala-2.13.10.tgz | tar xfz - -C /usr/share && \
     mv /usr/share/scala-2.13.10 /usr/share/scala
-RUN apt install -y openjdk-17-jdk
+RUN apt-get update && apt install -y openjdk-17-jdk
 
 RUN groupadd -g $GROUP_ID $GROUP_NAME && \
     useradd -u $USER_ID -g $GROUP_ID -ms /bin/bash $USER_NAME

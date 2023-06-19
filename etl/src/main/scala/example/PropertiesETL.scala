@@ -5,12 +5,42 @@ import org.apache.spark.SparkFiles
 import org.apache.spark.sql.functions.{regexp_extract, regexp_replace, when, lower, col, substring_index, udf, to_date}
 import org.apache.spark.sql.types.{FloatType, IntegerType, StringType}
 
+import scalaj.http._
+
+import org.json4s._
+import org.json4s.native.Serialization._
+import org.json4s.native.Serialization
+
 object PropertiesETL {
+    implicit val formats = Serialization.formats(NoTypeHints)
+
+    def updateLoadedColumn(url: String, fileName: String, value: String): Unit = {
+        val apiUrl: String = sys.env("SUPABASE_API_URL")
+        val baseUrl: String = s"$apiUrl/rest/v1/rpc/update_loaded_col"
+        val newValues: Map[String, String] = Map("_url" -> s"$url", "_value" -> s"$value")
+        
+        val response: HttpResponse[String] = Http(baseUrl)
+          .method("POST")
+          .header("apikey", sys.env("SUPABASE_API_KEY"))
+          .header("prefer", "return=representation")
+          .header("Content-Type", "application/json")
+          .postData(write(newValues))
+          .asString
+        
+        //extracting the status code from the response
+        val statusCode: Int = response.code
+        if (statusCode == 204) {
+          println(s"Success on updating loaded column for $fileName")
+        } else {
+          println(s"Error on updating loaded column for $fileName")
+        }
+    }
+
     def propertiesDataUpdate(): Unit = {
         val spark: SparkSession = SparkSession.builder()
             .appName("Example")
             .master("local[*]")
-            .config("spark.executor.extraClassPath", "/opt/workspace/postgresql-42.6.0.jar")
+            .config("spark.sql.codegen.wholeStage", "false")
             .getOrCreate()
         import spark.implicits._
         
@@ -18,12 +48,12 @@ object PropertiesETL {
         val uploadedCsv: DataFrame = spark.read
             .format("jdbc")
             .option("driver", "org.postgresql.Driver")
-            .option("url", "jdbc:postgresql://db.igdnlrrqfnwivrfldsyy.supabase.co:5432/postgres")
-            .option("dbtable", "csv")
-            .option("user", "postgres")
-            .option("password", "+?gZMK.KFtxC@3x")
+            .option("url", sys.env("DATABASE_URL"))
+            .option("dbtable", sys.env("DATABASE_CSVS"))
+            .option("user", sys.env("DATABASE_USER"))
+            .option("password", sys.env("DATABASE_PASSWORD"))
             .load()
-
+        
         val notLoadedFiles: DataFrame = uploadedCsv.filter(col("loaded") === false)
 
         if (notLoadedFiles.count() != 0) {
@@ -39,23 +69,17 @@ object PropertiesETL {
 
                 println("Saving properties table")
                 properties.write.format("jdbc").mode("append").option("driver", "org.postgresql.Driver")
-                    .option("url", "jdbc:postgresql://db.igdnlrrqfnwivrfldsyy.supabase.co:5432/postgres")
-                    .option("dbtable", "properties")
-                    .option("user", "postgres")
-                    .option("password", "+?gZMK.KFtxC@3x")
+                    .option("url", sys.env("DATABASE_URL"))
+                    .option("dbtable", sys.env("DATABASE_PROPERTIES"))
+                    .option("user", sys.env("DATABASE_USER"))
+                    .option("password", sys.env("DATABASE_PASSWORD"))
                     .save()
+                
+                val databseName: String = sys.env("DATABASE_CSVS")
+                println(s"Updating $databseName table")
+                updateLoadedColumn(url, fileName, "true")
             })
-
-            println("Updating csv table")
-            //TODO: fix the overwrite mode because it's not working as expected
-            uploadedCsv.withColumn("loaded", when($"loaded" === false, true).otherwise($"loaded"))
-                .write.format("jdbc").mode("overwrite").option("driver", "org.postgresql.Driver")
-                .option("url", "jdbc:postgresql://db.igdnlrrqfnwivrfldsyy.supabase.co:5432/postgres")
-                .option("dbtable", "csv")
-                .option("user", "postgres")
-                .option("password", "+?gZMK.KFtxC@3x")
-                .save()
-
+            
         } else {
             println("There are no files to load")
         }

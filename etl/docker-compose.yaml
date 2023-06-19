@@ -8,6 +8,14 @@ services:
         USER_ID: ${UID}
         GROUP_ID: ${GID}
     hostname: scala
+    environment:
+      - SUPABASE_API_KEY=${SUPABASE_API_KEY}
+      - SUPABASE_API_URL=${SUPABASE_API_URL}
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_CSVS=${DATABASE_CSVS}
+      - DATABASE_PROPERTIES=${DATABASE_PROPERTIES}
     volumes:
       - .:/home/docker/app
     user: ${UID}:${GID}
