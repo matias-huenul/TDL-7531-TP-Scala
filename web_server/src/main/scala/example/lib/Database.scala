@@ -34,20 +34,20 @@ object Database {
     args: Map[String, String]
   )(implicit ec: ExecutionContext): Future[List[Map[String, String]]] = {
     val apiKey = sys.env("SUPABASE_API_KEY")
-    val baseUrl = sys.env("SUPABASE_API_URL") + "/rest/v1/properties_scraped?select=barrio,rooms,price,currency,type,operation,url&limit=3&"
+    val baseUrl = sys.env("SUPABASE_API_URL") + "/rest/v1/properties_scraped?select=neighborhood,rooms,price,currency,property_type,operation_type,url&limit=3&"
 
     val argsMapping = Map(
-      "ubicacion" -> "barrio",
+      "ubicacion" -> "neighborhood",
       "ambientes" -> "rooms",
       "precio" -> "price",
       "moneda" -> "currency",
-      "tipo" -> "type",
-      "operacion" -> "operation",
+      "tipo" -> "property_type",
+      "operacion" -> "operation_type",
     )
 
     val argsMapped = args.map { case (key, value) => (argsMapping(key), value) }
 
-    val upperValues = List("type", "operation")
+    val upperValues = List("property_type", "operation_type")
 
     val argsMappedUpper = argsMapped.map { case (key, value) =>
       if (upperValues.contains(key)) {
@@ -57,7 +57,7 @@ object Database {
       }
     }
 
-    val url = baseUrl + makeQueryString(argsMappedUpper, false)
+    val url = baseUrl + makeQueryString(argsMappedUpper, false).replace(" ", "%20")
 
     println(s"URL: $url")
 
