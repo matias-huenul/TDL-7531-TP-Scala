@@ -25,7 +25,7 @@ SUPABASE_API_KEY= # API Key de Supabase
 Iniciar `ngrok` para poder acceder al servidor desde internet:
 
 ```bash
-docker run -it -e NGROK_AUTHTOKEN=... --network host ngrok/ngrok http 8080`
+docker run -it -e NGROK_AUTHTOKEN=<<NGROK_AUTHTOKEN>> --network host ngrok/ngrok http 8080
 ```
 
 Setear el webhook de Telegram para que apunte a la URL de `ngrok`:
@@ -33,8 +33,8 @@ Setear el webhook de Telegram para que apunte a la URL de `ngrok`:
 ```bash
 curl -s --request POST \
     --header "Content-Type: application/json" \
-    --data "{\"url\": \"https://....ngrok-free.app\"}" \
-    "https://api.telegram.org/bot.../setWebhook" >/dev/null
+    --data "{\"url\": \"<<URL generada por ngrok en el paso anterior>>\"}" \
+    "https://api.telegram.org/bot<<TELEGRAM_API_TOKEN>>/setWebhook" >/dev/null
 ```
 
 ## Ejecución
