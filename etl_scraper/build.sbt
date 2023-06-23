@@ -19,6 +19,9 @@ lazy val root = (project in file("."))
     libraryDependencies += "me.tongfei" % "progressbar" % "0.9.5",
     libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.4.7",
     libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
+    libraryDependencies += "com.typesafe.akka" %% "akka-http" % "10.5.0",
+    libraryDependencies += "com.typesafe.akka" %% "akka-actor"    % "2.8.0",
+    libraryDependencies += "com.typesafe.akka" %% "akka-stream"    % "2.8.0"
   )
 
 assemblyMergeStrategy in assembly := {

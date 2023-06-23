@@ -1,13 +1,16 @@
 services:
   scala:
     build:
-      context: ..
+      context: ../etl_scraper
       args:
         USER_NAME: docker
         GROUP_NAME: docker
         USER_ID: ${UID}
         GROUP_ID: ${GID}
     hostname: scala
+    environment:
+      - SUPABASE_USER=${SUPABASE_USER}
+      - SUPABASE_PASSWORD=${SUPABASE_PASSWORD}
     volumes:
       - .:/home/docker/app
     user: ${UID}:${GID}
