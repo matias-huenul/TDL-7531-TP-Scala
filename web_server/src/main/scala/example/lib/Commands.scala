@@ -118,13 +118,14 @@ object Commands {
     args: Map[String, String]
   )(implicit ec: ExecutionContext): Future[String] = {
     println(s"Searching properties with args: $args")
+    val operationType = args("operacion").toLowerCase
+
     Database.searchProperties(args).map { properties =>
       if (properties.isEmpty) {
         "No se encontraron propiedades con los parámetros especificados."
       } else {
         val resultString = properties.map { property =>
           val propertyType = property("property_type").toLowerCase.capitalize
-          val operationType = property("operation_type").toLowerCase
           val l3 = property("neighborhood")
           val rooms = property("rooms")
           val price = NumberFormat.getNumberInstance.format(property("price").toInt)

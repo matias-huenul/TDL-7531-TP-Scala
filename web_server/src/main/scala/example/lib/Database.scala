@@ -34,7 +34,14 @@ object Database {
     args: Map[String, String]
   )(implicit ec: ExecutionContext): Future[List[Map[String, String]]] = {
     val apiKey = sys.env("SUPABASE_API_KEY")
-    val baseUrl = sys.env("SUPABASE_API_URL") + "/rest/v1/properties_scraped?select=neighborhood,rooms,price,currency,property_type,operation_type,url&limit=3&"
+  
+    val table = if (args("operacion") == "venta") {
+      "properties_sale"
+    } else {
+      "properties_rent"
+    }
+  
+    val baseUrl = sys.env("SUPABASE_API_URL") + s"/rest/v1/$table?select=neighborhood,rooms,price,currency,property_type,url&limit=10&"
 
     val argsMapping = Map(
       "ubicacion" -> "neighborhood",
@@ -42,12 +49,13 @@ object Database {
       "precio" -> "price",
       "moneda" -> "currency",
       "tipo" -> "property_type",
-      "operacion" -> "operation_type",
     )
 
-    val argsMapped = args.map { case (key, value) => (argsMapping(key), value) }
+    val argsMapped = args.collect {
+      case (key, value) if argsMapping.contains(key) => (argsMapping(key), value)
+    }
 
-    val upperValues = List("property_type", "operation_type")
+    val upperValues = List("property_type")
 
     val argsMappedUpper = argsMapped.map { case (key, value) =>
       if (upperValues.contains(key)) {
