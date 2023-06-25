@@ -1,7 +1,7 @@
 services:
   scala:
     build:
-      context: ../etl_scraper
+      context: .
       args:
         USER_NAME: docker
         GROUP_NAME: docker
