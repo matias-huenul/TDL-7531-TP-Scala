@@ -13,6 +13,8 @@ import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken, RawHe
 import akka.util.ByteString
 import scala.concurrent.ExecutionContext
 
+import example.lib.Utils
+
 object Database {
   implicit val system = ActorSystem("database")
   implicit val formats: Formats = DefaultFormats
@@ -34,11 +36,15 @@ object Database {
     args: Map[String, String]
   )(implicit ec: ExecutionContext): Future[List[Map[String, String]]] = {
     val apiKey = sys.env("SUPABASE_API_KEY")
-  
-    val table = if (args("operacion") == "venta") {
-      "properties_sale"
-    } else {
-      "properties_rent"
+
+    val table = args("operacion").toLowerCase match {
+      case "venta" => "properties_sale"
+      case "alquiler" => "properties_rent"
+      case _ => null
+    }
+
+    if (table == null) {
+      return Future.successful(List.empty[Map[String, String]])
     }
   
     val baseUrl = sys.env("SUPABASE_API_URL") + s"/rest/v1/$table?select=neighborhood,rooms,price,currency,property_type,url&limit=10&"
@@ -52,39 +58,24 @@ object Database {
     )
 
     val argsMapped = args.collect {
-      case (key, value) if argsMapping.contains(key) => (argsMapping(key), value)
-    }
-
-    val upperValues = List("property_type")
-
-    val argsMappedUpper = argsMapped.map { case (key, value) =>
-      if (upperValues.contains(key)) {
-        (key, value.toUpperCase)
-      } else {
-        (key, value)
+      case (key, value) if argsMapping.contains(key) => {
+        if (key == "tipo") {
+          (argsMapping(key), value.toUpperCase)
+        } else {
+          (argsMapping(key), value)
+        }
       }
     }
 
-    val url = baseUrl + makeQueryString(argsMappedUpper, false).replace(" ", "%20")
+    val url = baseUrl + makeQueryString(argsMapped, false).replace(" ", "%20")
 
-    println(s"URL: $url")
-
-    val request = HttpRequest(
-      uri = url,
-      headers = List(
-        RawHeader("apikey", apiKey),
-        Authorization(OAuth2BearerToken(apiKey))
-      )
+    val headers: List[HttpHeader] = List(
+      RawHeader("apikey", apiKey),
+      Authorization(OAuth2BearerToken(apiKey)),
     )
 
-    Http().singleRequest(request).flatMap { response =>
-      response.entity.dataBytes.runFold(ByteString(""))(_ ++ _).map { body =>
-        val jsonBody = parse(body.utf8String)
-        println(s"JSON body: $jsonBody")
-        val results = jsonBody.extract[List[Map[String, String]]]
-        println(s"Results: $results")
-        results
-      }
+    Utils.makeHttpRequest(url, headers = headers).map { body =>
+      body.extract[List[Map[String, String]]]
     }
   }
 
@@ -96,23 +87,6 @@ object Database {
   def estimatePropertyValue(
     args: Map[String, String]
   )(implicit ec: ExecutionContext): Future[List[Map[String, String]]] = {
-    // Para usar esta función, primero hay que crearla en la base de datos:
-
-    // CREATE OR REPLACE FUNCTION estimate_property_value(location varchar, n_rooms varchar DEFAULT NULL)
-    // RETURNS TABLE (estimated_property_value int, currency varchar) AS $$
-    //   SELECT
-    //     CAST(AVG(CAST(price AS int)) AS int) AS estimated_property_value,
-    //     currency
-    //   FROM
-    //     properties
-    //   WHERE
-    //     l3 = location
-    //     AND (n_rooms IS NULL OR rooms = n_rooms)
-    //   GROUP BY currency
-    // $$ LANGUAGE SQL IMMUTABLE
-
-    // SELECT * from estimate_property_value('Recoleta')
-
     val apiKey = sys.env("SUPABASE_API_KEY")
     val baseUrl = sys.env("SUPABASE_API_URL") + "/rest/v1/rpc/estimate_property_value?"
 
@@ -122,29 +96,17 @@ object Database {
       "tipo" -> "_property_type",
       "superficie" -> "_surface_total",
     )
-
     val argsMapped = args.map { case (key, value) => (argsMapping(key), value) }
 
-    val url = baseUrl + makeQueryString(argsMapped, true)
+    val url = baseUrl + makeQueryString(argsMapped, true).replace(" ", "%20")
 
-    println(s"URL: $url")
-
-    val request = HttpRequest(
-      uri = url,
-      headers = List(
-        RawHeader("apikey", apiKey),
-        Authorization(OAuth2BearerToken(apiKey))
-      )
+    val headers: List[HttpHeader] = List(
+      RawHeader("apikey", apiKey),
+      Authorization(OAuth2BearerToken(apiKey)),
     )
 
-    Http().singleRequest(request).flatMap { response =>
-      response.entity.dataBytes.runFold(ByteString(""))(_ ++ _).map { body =>
-        val jsonBody = parse(body.utf8String)
-        println(s"JSON body: $jsonBody")
-        val results = jsonBody.extract[List[Map[String, String]]]
-        println(s"Results: $results")
-        results
-      }
+    Utils.makeHttpRequest(url, headers = headers).map { body =>
+      body.extract[List[Map[String, String]]]
     }
   }
 }

@@ -25,7 +25,6 @@ object Commands {
     */
   def handleMessage(text: String)(implicit ec: ExecutionContext): Future[String] = {
     val (command, args) = parseMessage(text)
-    println(s"Command: $command, args: $args")
     handleCommand(command, args)
   }
 
@@ -117,7 +116,6 @@ object Commands {
   def searchProperties(
     args: Map[String, String]
   )(implicit ec: ExecutionContext): Future[String] = {
-    println(s"Searching properties with args: $args")
     val operationType = args("operacion").toLowerCase
 
     Database.searchProperties(args).map { properties =>
@@ -145,12 +143,8 @@ object Commands {
     * @return The response to the command.
     */
   def estimatePropertyValue(args: Map[String, String])(implicit ec: ExecutionContext): Future[String] = {
-    println(s"Searching properties with args: $args")
     Database.estimatePropertyValue(args).flatMap { estimatedValues =>
       Utils.getUsdToArsConversion().map { conversion =>
-        println(s"Property values: $estimatedValues")
-        println(s"USD to ARS conversion: $conversion")
-
         if (estimatedValues.isEmpty) {
           "No se pudo estimar el valor de tu propiedad ya que no se encontraron propiedades similares."
         } else {
@@ -164,7 +158,6 @@ object Commands {
             }
           }
 
-          println(s"Estimated values in ARS: $estimatedValuesInArs")
           val estimatedValue = (estimatedValuesInArs.sum / estimatedValuesInArs.length).toInt
           val estimatedValueString = NumberFormat.getNumberInstance.format(estimatedValue)
           val estimatedValueUsd = (estimatedValue / conversion).toInt

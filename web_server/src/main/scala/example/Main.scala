@@ -19,26 +19,21 @@ object Main extends App {
     post {
       entity(as[String]) { body =>
         complete {
-          try {
-            println(s"Received request with body $body")
-            val (chatId, text) = Telegram.parseMessage(body)
-            Commands.handleMessage(text).flatMap { responseMessage =>
-              println(s"Sending message: $responseMessage")
-              Telegram
-                .sendMessage(chatId, responseMessage)
-                .map { response =>
-                  println(s"Telegram API response: ${response.status}")
+          Telegram.parseMessage(body) match {
+            case Some((chatId, text)) =>
+              Commands.handleMessage(text).flatMap { responseMessage =>
+                Telegram.sendMessage(chatId, responseMessage).map { response =>
                   response.discardEntityBytes()
                   StatusCodes.OK
                 }
-            }.recover {
-              case e: Exception =>
-                println(s"An error ocurred: $e")
-                StatusCodes.OK
-            }
-          } catch {
-            case e: Exception =>
-              println(s"An error ocurred: $e")
+              }.recover {
+                case e: Exception =>
+                  println(s"Error during message handling: $e")
+                  StatusCodes.OK
+              }
+
+            case None =>
+              println(s"Telegram update is not a message, ignoring")
               StatusCodes.OK
           }
         }
