@@ -25,7 +25,6 @@ object Commands {
     */
   def handleMessage(text: String)(implicit ec: ExecutionContext): Future[String] = {
     val (command, args) = parseMessage(text)
-    println(s"Command: $command, args: $args")
     handleCommand(command, args)
   }
 
@@ -117,20 +116,24 @@ object Commands {
   def searchProperties(
     args: Map[String, String]
   )(implicit ec: ExecutionContext): Future[String] = {
-    println(s"Searching properties with args: $args")
+    val operationType = args("operacion").toLowerCase
+
     Database.searchProperties(args).map { properties =>
-      val resultString = properties.map { property =>
-        val propertyType = property("type").toLowerCase.capitalize
-        val operationType = property("operation").toLowerCase
-        val l3 = property("barrio")
-        val rooms = property("rooms")
-        val price = NumberFormat.getNumberInstance.format(property("price").toInt)
-        val currency = property("currency")
-        val url = property("url")
-        s"- [$propertyType en $operationType en $l3 de $rooms ambientes: $price $currency]($url)"
+      if (properties.isEmpty) {
+        "No se encontraron propiedades con los parámetros especificados."
+      } else {
+        val resultString = properties.map { property =>
+          val propertyType = property("property_type").toLowerCase.capitalize
+          val l3 = property("neighborhood")
+          val rooms = property("rooms")
+          val price = NumberFormat.getNumberInstance.format(property("price").toInt)
+          val currency = property("currency")
+          val url = property("url")
+          s"- [$propertyType en $operationType en $l3 de $rooms ambientes: $price $currency]($url)"
+        }
+        .mkString("\n")
+        s"Resultados de la búsqueda:\n\n$resultString"
       }
-      .mkString("\n")
-      s"Resultados de la búsqueda:\n\n$resultString"
     }
   }
 
@@ -140,28 +143,27 @@ object Commands {
     * @return The response to the command.
     */
   def estimatePropertyValue(args: Map[String, String])(implicit ec: ExecutionContext): Future[String] = {
-    println(s"Searching properties with args: $args")
     Database.estimatePropertyValue(args).flatMap { estimatedValues =>
       Utils.getUsdToArsConversion().map { conversion =>
-        println(s"Property values: $estimatedValues")
-        println(s"USD to ARS conversion: $conversion")
-
-        val estimatedValuesInArs: List[Int] = estimatedValues.map { estimatedValue =>
-          val value = estimatedValue("estimated_property_value").toInt
-          val currency = estimatedValue("currency")
-          if (currency == "ARS") {
-            value
-          } else {
-            (value * conversion).toInt            
+        if (estimatedValues.isEmpty) {
+          "No se pudo estimar el valor de tu propiedad ya que no se encontraron propiedades similares."
+        } else {
+          val estimatedValuesInArs: List[Int] = estimatedValues.map { estimatedValue =>
+            val value = estimatedValue("estimated_property_value").toInt
+            val currency = estimatedValue("currency")
+            if (currency == "ARS") {
+              value
+            } else {
+              (value * conversion).toInt            
+            }
           }
-        }
 
-        println(s"Estimated values in ARS: $estimatedValuesInArs")
-        val estimatedValue = (estimatedValuesInArs.sum / estimatedValuesInArs.length).toInt
-        val estimatedValueString = NumberFormat.getNumberInstance.format(estimatedValue)
-        val estimatedValueUsd = (estimatedValue / conversion).toInt
-        val estimatedValueUsdString = NumberFormat.getNumberInstance.format(estimatedValueUsd)
-        s"El valor estimado de tu propiedad es $estimatedValueString ARS ($estimatedValueUsdString USD)"
+          val estimatedValue = (estimatedValuesInArs.sum / estimatedValuesInArs.length).toInt
+          val estimatedValueString = NumberFormat.getNumberInstance.format(estimatedValue)
+          val estimatedValueUsd = (estimatedValue / conversion).toInt
+          val estimatedValueUsdString = NumberFormat.getNumberInstance.format(estimatedValueUsd)
+          s"El valor estimado de tu propiedad es $estimatedValueString ARS ($estimatedValueUsdString USD)"
+        }
       }
     }
   }

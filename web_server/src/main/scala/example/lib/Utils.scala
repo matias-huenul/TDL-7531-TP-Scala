@@ -24,16 +24,22 @@ object Utils {
     */
   def makeHttpRequest(
     url: String,
-    method: HttpMethod,
-    body: String = ""
-  ): Future[HttpResponse] = {
+    method: HttpMethod = HttpMethods.GET,
+    body: String = "",
+    headers: List[HttpHeader] = List.empty[HttpHeader]
+  )(implicit ec: ExecutionContext): Future[JValue] = {
     val request = HttpRequest(
       method = method,
       uri = url,
-      entity = HttpEntity(ContentTypes.`application/json`, body)
+      entity = HttpEntity(ContentTypes.`application/json`, body),
+      headers = headers
     )
 
-    Http().singleRequest(request)
+    Http().singleRequest(request).flatMap { response => 
+      response.entity.dataBytes.runFold(ByteString(""))(_ ++ _).map { body =>
+        parse(body.utf8String)
+      }
+    }
   }
   
   /** Get the current USD to ARS conversion.
@@ -42,11 +48,8 @@ object Utils {
     */
   def getUsdToArsConversion()(implicit ec: ExecutionContext): Future[Double] = {
     val url = "https://api.bluelytics.com.ar/v2/latest"
-    makeHttpRequest(url, HttpMethods.GET).flatMap { response =>
-      response.entity.dataBytes.runFold(ByteString(""))(_ ++ _).map { body =>
-        val jsonBody = parse(body.utf8String)
-        (jsonBody \ "blue" \ "value_sell").extract[Double]
-      }
+    makeHttpRequest(url, HttpMethods.GET).map { body =>
+      (body \ "blue" \ "value_sell").extract[Double]
     }
   }
 }

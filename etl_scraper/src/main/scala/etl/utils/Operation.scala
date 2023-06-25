@@ -1,14 +1,24 @@
 package etl.utils
 
 object Operation extends Enumeration {
-  val VENTA: Operation.Value = Value("VENTA")
-  val ALQUILER: Operation.Value = Value("ALQUILER")
+  val SALE, RENT = Value
 
   def fromString(s: String): Operation.Value = {
     s.toLowerCase() match {
-      case "venta" => VENTA
-      case "alquiler" => ALQUILER
-      case _ => ALQUILER
+      case "venta" => SALE
+      case "alquiler" => RENT
+      case "alquiler temporal" => RENT
+      case "renta" => RENT
+      case "sale" => SALE
+      case _ => RENT
+    }
+  }
+
+  def toSpanishString(o: Operation.Value): String = {
+    o match {
+      case SALE => "venta"
+      case RENT => "alquiler"
+      case _ => "alquiler"
     }
   }
 }

@@ -19,13 +19,15 @@ object Telegram {
     * @param messageBody The body of the message to parse.
     * @return A tuple containing the chat ID and the text of the message.
     */
-  def parseMessage(messageBody: String): (String, String) = {
-    val jsonBody = parse(messageBody)
-
-    val chatId = (jsonBody \ "message" \ "chat" \ "id").extract[String]
-    val text = (jsonBody \ "message" \ "text").extract[String]
-
-    (chatId, text)
+  def parseMessage(messageBody: String): Option[(String, String)] = {
+    try {
+      val jsonBody = parse(messageBody)
+      val chatId = (jsonBody \ "message" \ "chat" \ "id").extract[String]
+      val text = (jsonBody \ "message" \ "text").extract[String]
+      Some((chatId, text))
+    } catch {
+      case _: Exception => None
+    }
   }
 
   /** Send a message to a Telegram chat.
