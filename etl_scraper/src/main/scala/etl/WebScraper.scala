@@ -1,8 +1,8 @@
 package etl
 
 import com.typesafe.scalalogging.Logger
+import etl.model.Property
 import etl.utils.{Operation, Page}
-import io.netty.util.Timeout
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
 import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
 import net.ruippeixotog.scalascraper.dsl.DSL._
@@ -23,6 +23,12 @@ object WebScraper{
   val USER_AGENT="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3\""
   val logger:Logger=Logger("WebScraper")
 
+  /**
+   * Builds a progress bar
+   * @param total Total number of pages
+   * @param message Message to show in the progress bar
+   * @return ProgressBar object for usage
+   */
   private def progressBar(total:Int,message:String):ProgressBar={
     new ProgressBarBuilder()
       .setInitialMax(total)
@@ -58,7 +64,7 @@ object WebScraper{
    * @param stringData: String with json data
    * @return List[JValue]: List of json objects
    */
-  def parseJson(stringData:String):List[JValue]={
+  private def parseJson(stringData:String):List[JValue]={
     implicit val formats:DefaultFormats.type=DefaultFormats
     val result=stringData.split("\\{\"listPostings\":")(1).split("\\,\"listCondominium\"")(0)
     val json=parse(result)
@@ -71,7 +77,7 @@ object WebScraper{
    * @param operation: Operation of the properties
    * @return Property: Property with the data of the json
    */
-  def readPropertyZonaprop(data:JValue,operation:Operation.Value):Property={
+  private def readPropertyZonaprop(data:JValue,operation:Operation.Value):Property={
     implicit val formats:DefaultFormats.type=DefaultFormats
     val property=new Property(page=Page.ZONAPROP)
 
@@ -169,6 +175,11 @@ object WebScraper{
     listProperties.toList
   }
 
+  /**
+   * Get the url of the next page of argenprop.com
+   * @param doc: Document to scrape
+   * @return String: Url of the next page
+   */
   private def getNextPageArgenprop(doc:ScalaDocument):String={
     val nextPage=doc>>elementList(".pagination__page-next>a")
     if(nextPage.isEmpty)""else(nextPage.head>?>attr("href")).getOrElse("")
@@ -258,7 +269,7 @@ object WebScraper{
    * Scrapes mercadolibre.com.ar and returns of links of publications
    * @return Elements: List of links of publications
    */
-  def getPublicationLinksMELI:List[String]={
+  private def getPublicationLinksMELI:List[String]={
     val elements:Elements=new Elements()
 
     var maxPages=0
@@ -294,7 +305,7 @@ object WebScraper{
     links.toList
   }
 
-  def scrapePropertyMELI(url:String,session:Connection):Property={
+  private def scrapePropertyMELI(url:String,session:Connection):Property={
     val doc=session.newRequest().url(url).get()
     val property=new Property(page=Page.MELI)
 
@@ -335,7 +346,7 @@ object WebScraper{
 
   /**
    * Scrapes mercadolibre.com.ar for properties in rent and returns a list of properties
-   * It is slow and prone to errors
+   * It is slow but gets all rent properties
    * @return List[Propiedad]: List of properties
    */
   def mercadolibre():List[Property]={

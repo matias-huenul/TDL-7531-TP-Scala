@@ -1,16 +1,16 @@
 package etl.utils
 
 import com.typesafe.scalalogging.Logger
-import etl.Property
+import etl.model.Property
 
 import java.sql.{Connection, DriverManager}
 
 object DatabaseManager {
   val logger: Logger = Logger("DatabaseManager")
-  private def getConnection(): Connection = {
-    val url = "jdbc:postgresql://db.igdnlrrqfnwivrfldsyy.supabase.co:5432/postgres"
-    val username = sys.env("SUPABASE_USER")
-    val password = sys.env("SUPABASE_PASSWORD")
+  private def getConnection: Connection = {
+    val url = sys.env("JDBC_URL")
+    val username = sys.env("DB_USER")
+    val password = sys.env("DB_PASSWORD")
 
     Class.forName("org.postgresql.Driver")
 
@@ -19,7 +19,7 @@ object DatabaseManager {
   }
 
   def deletePropertiesWithPage(operation: Operation.Value, page: Page.Value): Unit = {
-    val connection = getConnection()
+    val connection = getConnection
 
     try {
       val query = "DELETE FROM properties_"+operation.toString.toLowerCase+" WHERE page = ?"
@@ -35,7 +35,7 @@ object DatabaseManager {
   }
 
   def insertProperties(properties: List[Property], operation: Operation.Value): Unit = {
-    val connection = getConnection()
+    val connection = getConnection
 
     try {
       val query = "INSERT INTO properties_"+operation.toString.toLowerCase+" (url, property_type, price, currency, expenses, total_surf, covered_surf, rooms, bedrooms, bathrooms, address, neighborhood, garage, page)" +

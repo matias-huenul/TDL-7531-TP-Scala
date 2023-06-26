@@ -1,4 +1,4 @@
-package etl
+package etl.model
 
 import etl.utils.{Currency, Operation, Page, PropertyType}
 

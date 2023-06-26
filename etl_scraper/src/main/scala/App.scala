@@ -1,4 +1,4 @@
-package etl
+import etl.TaskScheduler
 
 object App extends App{
   TaskScheduler.scheduler()
