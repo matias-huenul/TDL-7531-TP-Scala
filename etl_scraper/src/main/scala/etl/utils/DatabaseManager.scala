@@ -1,6 +1,5 @@
 package etl.utils
 
-import com.typesafe.scalalogging.Logger
 import etl.model.Property
 
 import java.sql.{Connection, DriverManager}

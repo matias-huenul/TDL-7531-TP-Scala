@@ -1,6 +1,5 @@
 package etl
 
-import com.typesafe.scalalogging.Logger
 import etl.model.Property
 import etl.utils.{Operation, Page}
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
