@@ -3,6 +3,7 @@ package etl
 import etl.model.Property
 import etl.utils.{Operation, Page}
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
+import net.ruippeixotog.scalascraper.browser._
 import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
 import net.ruippeixotog.scalascraper.dsl.DSL._
 import net.ruippeixotog.scalascraper.model.{Element, Document => ScalaDocument}
@@ -15,11 +16,12 @@ import me.tongfei.progressbar._
 
 import java.util.Calendar
 import scala.collection.mutable.ListBuffer
+import scala.jdk.CollectionConverters._
 object WebScraper{
   private val URL_ARGENPROP="https://www.argenprop.com"
   private val URL_MELI="https://inmuebles.mercadolibre.com.ar/departamentos/alquiler/capital-federal/"
   val URL_ZONAPROP="https://www.zonaprop.com.ar"
-  val USER_AGENT="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3\""
+  val USER_AGENT="Mozilla/5.0 (X11; Linux x86_64; rv:107.0) Gecko/20100101 Firefox/107.0"
 
   /**
    * Builds a progress bar
@@ -138,21 +140,23 @@ object WebScraper{
   def zonaprop(operation:Operation.Value=Operation.RENT):List[Property]={
     val currentTime=Calendar.getInstance.getTime.getTime
     val url=URL_ZONAPROP+"/casas-departamentos-ph-"+Operation.toSpanishString(operation)+"-capital-federal"
-    val session=Jsoup.newSession().referrer("https://www.google.com").userAgent(USER_AGENT)
-
+    val session=Jsoup.newSession().userAgent(USER_AGENT)
 
     val listProperties=new ListBuffer[Property]()
     var maxPages=1
     var pb:ProgressBar=null
 
+    val browser=JsoupBrowser()
+    //browser.get(url+".html")
+
     var i=1
     do{
       try{
-        val doc=session.newRequest().url(url+"-pagina-"+i+".html").get()
-        val dataList=parseJson(doc.getElementById("preloadedData").data())
+        val doc=browser.get(url+(if(i==1) "" else "-pagina-"+ i) +".html")
+        val dataList=parseJson((doc >> element("#preloadedData")).innerHtml)
 
         if(pb==null){
-          maxPages=getNumberPagesZonaprop(doc)
+          maxPages=(toNumber((doc>>texts("h1")).head)/20)+1
           pb=progressBar(maxPages,"Scraping ZonaProp "+operation.toString)
         }
 
