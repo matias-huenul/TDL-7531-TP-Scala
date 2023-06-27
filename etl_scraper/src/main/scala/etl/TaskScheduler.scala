@@ -8,7 +8,6 @@ import java.util.{Timer, TimerTask}
 import java.util.Calendar
 
 object TaskScheduler{
-  val logger: Logger =Logger("TaskScheduler")
   private def updateMeli(operation:Operation.Value=Operation.RENT): Unit = {
     val rentProperties: List[Property] = MeliAPI.getRentPropertiesCABA
     val currentTime=Calendar.getInstance.getTime.getTime
@@ -19,7 +18,7 @@ object TaskScheduler{
     } catch {
       case e: Exception => println("Error updating db " + e.printStackTrace())
     }
-    logger.info("Database properties_"+operation.toString.toLowerCase+" updated in "+(Calendar.getInstance.getTime.getTime-currentTime)/1000+" seconds for page "+ Page.MELI.toString + " with " + rentProperties.length + " properties")
+    println("Database properties_"+operation.toString.toLowerCase+" updated in "+(Calendar.getInstance.getTime.getTime-currentTime)/1000+" seconds for page "+ Page.MELI.toString + " with " + rentProperties.length + " properties")
   }
 
   /**
@@ -44,7 +43,7 @@ object TaskScheduler{
       case e:Exception=>println("Error updating db "+e.printStackTrace())
     }
 
-    logger.info("Database properties_"+operation.toString.toLowerCase+" updated in "+(Calendar.getInstance.getTime.getTime-currentTime)/1000+" seconds for page "+page.toString)
+    println("Database properties_"+operation.toString.toLowerCase+" updated in "+(Calendar.getInstance.getTime.getTime-currentTime)/1000+" seconds for page "+page.toString)
   }
 
   /**
@@ -57,9 +56,9 @@ object TaskScheduler{
     val schedulerRent=new Timer()
     val taskRent = new TimerTask {
       def run(): Unit = {
+        updateMeli()
         updateDB(Operation.RENT, Page.ARGENPROP)
         updateDB(Operation.RENT, Page.ZONAPROP)
-        updateMeli()
       }
     }
 

@@ -21,7 +21,6 @@ object WebScraper{
   private val URL_MELI="https://inmuebles.mercadolibre.com.ar/departamentos/alquiler/capital-federal/"
   val URL_ZONAPROP="https://www.zonaprop.com.ar"
   val USER_AGENT="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3\""
-  val logger:Logger=Logger("WebScraper")
 
   /**
    * Builds a progress bar
@@ -163,15 +162,15 @@ object WebScraper{
           if(!listProperties.exists(_.url == property.url)) listProperties+=property
         }
       }catch{
-        case  e:Exception=>logger.error("Error scraping ZonaProp page "+i+": "+e.getMessage)
+        case  e:Exception=>println("Error scraping ZonaProp page "+i+": "+e.getMessage)
       }
-      pb.step()
+      if(pb!=null) pb.step()
       if(i%50==0)Thread.sleep(5000)
       i+=1
     }while(i<=maxPages)
 
     pb.close()
-    logger.info("Scraping ZonaProp "+operation+" finished in "+(Calendar.getInstance.getTime.getTime-currentTime)/1000+" seconds reading a total of "+listProperties.size+" properties")
+    println("Scraping ZonaProp "+operation+" finished in "+(Calendar.getInstance.getTime.getTime-currentTime)/1000+" seconds reading a total of "+listProperties.size+" properties")
     listProperties.toList
   }
 
@@ -258,10 +257,10 @@ object WebScraper{
         if(toNumber(url)%25==0)Thread.sleep(5000) //Sleep 10 seconds every 25 pages
       }while(url!=URL_ARGENPROP&&toNumber(url)< 100)
     }catch{
-      case  e:Exception=>logger.error("Error scraping Argenprop: "+e.getMessage)
+      case  e:Exception=>println("Error scraping Argenprop: "+e.getMessage)
     }
     pb.close()
-    logger.info("Scraping Argenprop finished in "+(Calendar.getInstance.getTime.getTime-currentTime)/1000+" seconds reading a total of "+listProperties.size+" properties")
+    println("Scraping Argenprop finished in "+(Calendar.getInstance.getTime.getTime-currentTime)/1000+" seconds reading a total of "+listProperties.size+" properties")
     listProperties.toList
   }
 
@@ -365,13 +364,13 @@ object WebScraper{
         val property=scrapePropertyMELI(link,session)
         listProperties.append(property)
       }catch{
-        case  e:Exception=>logger.error("Error scraping MELI: "+e.getMessage)
+        case  e:Exception=>println("Error scraping MELI: "+e.getMessage)
       }
       if(links.indexOf(link)%50==0)Thread.sleep(5000) //Sleep 5 seconds every 50 pages
       pb.step()
     }
     pb.close()
-    logger.info("Scraping MELI finished in "+(Calendar.getInstance.getTime.getTime-currentTime)/1000+" seconds reading a total of "+listProperties.size+" properties")
+    println("Scraping MELI finished in "+(Calendar.getInstance.getTime.getTime-currentTime)/1000+" seconds reading a total of "+listProperties.size+" properties")
     listProperties.toList
   }
 }
