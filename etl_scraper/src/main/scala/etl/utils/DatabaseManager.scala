@@ -6,7 +6,6 @@ import etl.model.Property
 import java.sql.{Connection, DriverManager}
 
 object DatabaseManager {
-  val logger: Logger = Logger("DatabaseManager")
   private def getConnection: Connection = {
     val url = sys.env("JDBC_URL")
     val username = sys.env("DB_USER")
@@ -61,7 +60,7 @@ object DatabaseManager {
 
           statement.executeUpdate()
         }catch {
-          case e: Exception => logger.error("Error inserting property: " + property.url + " " + e.getMessage)
+          case e: Exception => println("Error inserting property: " + property.url + " " + e.getMessage)
         }
       }
 
