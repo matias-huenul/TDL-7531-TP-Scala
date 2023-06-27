@@ -55,9 +55,9 @@ object TaskScheduler{
     val schedulerRent=new Timer()
     val taskRent = new TimerTask {
       def run(): Unit = {
-        updateDB(Operation.RENT, Page.ZONAPROP)
         updateMeli()
         updateDB(Operation.RENT, Page.ARGENPROP)
+        updateDB(Operation.RENT, Page.ZONAPROP)
       }
     }
 
