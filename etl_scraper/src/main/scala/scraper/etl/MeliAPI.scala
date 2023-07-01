@@ -1,4 +1,4 @@
-package etl
+package scraper.etl
 
 
 import akka.actor.ActorSystem
@@ -6,8 +6,8 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
-import etl.model.Property
-import etl.utils.{Currency, Page}
+import scraper.etl.model.Property
+import scraper.etl.utils.{Currency, Page}
 import me.tongfei.progressbar.{ProgressBarBuilder, ProgressBarStyle}
 import org.json4s.native.parseJson
 import org.json4s.{DefaultFormats, JValue}

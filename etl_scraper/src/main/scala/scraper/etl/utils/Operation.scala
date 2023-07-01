@@ -1,4 +1,4 @@
-package etl.utils
+package scraper.etl.utils
 
 object Operation extends Enumeration {
   val SALE, RENT = Value

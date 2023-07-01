@@ -1,6 +1,6 @@
-package etl.utils
+package scraper.etl.utils
 
-import etl.model.Property
+import scraper.etl.model.Property
 
 import java.sql.{Connection, DriverManager}
 
@@ -32,7 +32,7 @@ object DatabaseManager {
     }
   }
 
-  def insertProperties(properties: List[Property], operation: Operation.Value): Unit = {
+  def insertProperties(properties: Set[Property], operation: Operation.Value): Unit = {
     val connection = getConnection
 
     try {

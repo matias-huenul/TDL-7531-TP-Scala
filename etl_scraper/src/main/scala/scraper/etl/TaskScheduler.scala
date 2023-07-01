@@ -1,7 +1,7 @@
-package etl
+package scraper.etl
 
-import etl.model.Property
-import etl.utils.{Operation, Page, DatabaseManager => DB}
+import scraper.etl.model.Property
+import scraper.etl.utils.{Operation, Page, DatabaseManager => DB}
 
 import java.util.{Timer, TimerTask}
 import java.util.Calendar
@@ -13,7 +13,7 @@ object TaskScheduler{
 
     try {
       DB.deletePropertiesWithPage(operation, Page.MELI)
-      DB.insertProperties(rentProperties, operation)
+      DB.insertProperties(rentProperties.toSet, operation)
     } catch {
       case e: Exception => println("Error updating db " + e.printStackTrace())
     }
@@ -26,11 +26,11 @@ object TaskScheduler{
    * @param page: Page being scraped
    */
   private def updateDB(operation:Operation.Value=Operation.RENT, page:Page.Value)={
-    var prop=List[Property]()
+    var prop=Set[Property]()
     page match{
       case Page.ZONAPROP=>prop=WebScraper.zonaprop(operation)
       case Page.ARGENPROP=>prop=WebScraper.argenprop(operation)
-      case Page.MELI=>prop=WebScraper.mercadolibre()
+      case Page.MELI=>prop=WebScraper.mercadolibre().toSet
       case _=>println("Page not recognized")
     }
     val currentTime=Calendar.getInstance.getTime.getTime

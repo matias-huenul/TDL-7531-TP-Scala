@@ -1,4 +1,4 @@
-package etl.utils
+package scraper.etl.utils
 
 object Currency extends Enumeration {
   val ARS: Currency.Value = Value("ARS")
