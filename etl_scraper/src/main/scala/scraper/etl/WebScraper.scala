@@ -1,9 +1,8 @@
-package etl
+package scraper.etl
 
-import etl.model.Property
-import etl.utils.{Operation, Page}
+import scraper.etl.model.Property
+import scraper.etl.utils.{Operation, Page}
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
-import net.ruippeixotog.scalascraper.browser._
 import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
 import net.ruippeixotog.scalascraper.dsl.DSL._
 import net.ruippeixotog.scalascraper.model.{Element, Document => ScalaDocument}
@@ -57,6 +56,15 @@ object WebScraper{
   def getNumberPagesZonaprop(doc:Document):Int={
     val numberProperties=toNumber(doc.getElementsByTag("h1").first().text())
     (numberProperties/20)+1
+  }
+
+  private def getUrlsZonaprop(operation:Operation.Value):List[String]={
+    val baseUrl=URL_ZONAPROP+"/casas-departamentos-ph-"+ Operation.toSpanishString(operation) + "-capital-federal"
+
+    val doc = JsoupBrowser().get(baseUrl+".html")
+    val  maxPages=(toNumber((doc>>texts("h1")).head)/20)+1
+    val URLs = (1 to 5).map(i=> baseUrl + (if(i==1) "" else "-pagina-"+ i) +".html")
+    URLs.toList
   }
 
   /**
@@ -137,44 +145,30 @@ object WebScraper{
    * @param operation: Operation to scrape (Alquiler, Venta)
    * @return List[Propiedad]: List of properties
    */
-  def zonaprop(operation:Operation.Value=Operation.RENT):List[Property]={
+  def zonaprop(operation:Operation.Value=Operation.RENT):Set[Property]={
     val currentTime=Calendar.getInstance.getTime.getTime
-    val url=URL_ZONAPROP+"/casas-departamentos-ph-"+Operation.toSpanishString(operation)+"-capital-federal"
-    val session=Jsoup.newSession().userAgent(USER_AGENT)
 
-    val listProperties=new ListBuffer[Property]()
-    var maxPages=1
-    var pb:ProgressBar=null
-
+    val urls = getUrlsZonaprop(operation)
     val browser=JsoupBrowser()
-    //browser.get(url+".html")
 
-    var i=1
-    do{
-      try{
-        val doc=browser.get(url+(if(i==1) "" else "-pagina-"+ i) +".html")
-        val dataList=parseJson((doc >> element("#preloadedData")).innerHtml)
+    val pb:ProgressBar=progressBar(urls.size,"Scraping ZonaProp "+operation.toString)
 
-        if(pb==null){
-          maxPages=(toNumber((doc>>texts("h1")).head)/20)+1
-          pb=progressBar(maxPages,"Scraping ZonaProp "+operation.toString)
-        }
-
-        for(data<-dataList){
-          val property=readPropertyZonaprop(data,operation)
-          if(!listProperties.exists(_.url == property.url)) listProperties+=property
-        }
-      }catch{
-        case  e:Exception=>println("Error scraping ZonaProp page "+i+": "+e.getMessage)
+    val listProperties = urls.flatMap(url => {
+      try {
+        pb.step()
+        val doc = browser.get(url)
+        val dataList = parseJson((doc >> element("#preloadedData")).innerHtml)
+        dataList.map(data => readPropertyZonaprop(data, operation)).toList
+      } catch {
+        case e: Exception =>
+          println(s"Error reading url. Error message: ${e.getMessage}")
+          None
       }
-      if(pb!=null) pb.step()
-      if(i%50==0)Thread.sleep(5000)
-      i+=1
-    }while(i<=maxPages)
-
+    }).toSet
     pb.close()
+
     println("Scraping ZonaProp "+operation+" finished in "+(Calendar.getInstance.getTime.getTime-currentTime)/1000+" seconds reading a total of "+listProperties.size+" properties")
-    listProperties.toList
+    listProperties
   }
 
   /**
@@ -185,6 +179,16 @@ object WebScraper{
   private def getNextPageArgenprop(doc:ScalaDocument):String={
     val nextPage=doc>>elementList(".pagination__page-next>a")
     if(nextPage.isEmpty)""else(nextPage.head>?>attr("href")).getOrElse("")
+  }
+
+  private def getUrlsArgenprop(operation: Operation.Value): IndexedSeq[String] = {
+    val url = URL_ARGENPROP + "/departamento-y-casa-" + Operation.toSpanishString(operation) + "-localidad-capital-federal"
+
+    val doc = JsoupBrowser().get(url)
+    val href = doc >> elementList(".pagination__page>a")
+    val maxPages = toNumber(href(href.length - 2).text).min(99)
+    val URLs = (1 to maxPages).map(i => url + (if (i != 1) s"-pagina-$i"))
+    URLs
   }
 
   /**
@@ -232,39 +236,29 @@ object WebScraper{
    * @param operation: Operation to scrape (Alquiler, Venta)
    * @return List[Propiedad]: List of properties
    */
-  def argenprop(operation:Operation.Value=Operation.RENT):List[Property]={
+  def argenprop(operation:Operation.Value=Operation.RENT):Set[Property]={
     val currentTime=Calendar.getInstance.getTime.getTime
-    val listProperties=new ListBuffer[Property]()
     val browser=JsoupBrowser()
-    var url=URL_ARGENPROP+"/departamento-y-casa-"+Operation.toSpanishString(operation)+"-localidad-capital-federal"
-    var pb:ProgressBar=null
 
-    try{
-      do{
-        val doc=browser.get(url)
-        if(pb==null){
-          val href=doc>>elementList(".pagination__page>a")
-          val lastPage=toNumber(href(href.length-2).text)
+    val urls = getUrlsArgenprop(operation)
+    val pb:ProgressBar=progressBar(urls.size,"Scraping Argenprop "+operation.toString)
 
-          pb=progressBar(lastPage.min(99),"Scraping Argenprop "+operation.toString)
-        }
-        val elements=doc>>"div.listing__item"
-
-        for(element<-elements){
-          val prop = scrapePropertyArgenprop(element)
-          if(!listProperties.exists(_.url==prop.url)) listProperties += prop
-        }
-
-        url=URL_ARGENPROP+getNextPageArgenprop(doc)
+    val props = urls.flatMap(url =>{
+      try{
         pb.step()
-        if(toNumber(url)%25==0)Thread.sleep(5000) //Sleep 10 seconds every 25 pages
-      }while(url!=URL_ARGENPROP&&toNumber(url)< 100)
-    }catch{
-      case  e:Exception=>println("Error scraping Argenprop: "+e.getMessage)
-    }
+        val doc=browser.get(url)
+        val elements = doc>>"div.listing__item"
+        elements.map( e => scrapePropertyArgenprop(e)).toList
+      }catch {
+        case e: Exception =>
+          println(s"Error reading url. Error message: ${e.getMessage}")
+          None
+      }
+    }).toSet
+
     pb.close()
-    println("Scraping Argenprop finished in "+(Calendar.getInstance.getTime.getTime-currentTime)/1000+" seconds reading a total of "+listProperties.size+" properties")
-    listProperties.toList
+    println("Scraping Argenprop finished in "+(Calendar.getInstance.getTime.getTime-currentTime)/1000+" seconds reading a total of "+props.size+" properties")
+    props
   }
 
   /**
