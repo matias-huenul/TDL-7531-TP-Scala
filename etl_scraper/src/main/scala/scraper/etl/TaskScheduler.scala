@@ -30,7 +30,6 @@ object TaskScheduler{
     page match{
       case Page.ZONAPROP=>prop=WebScraper.zonaprop(operation)
       case Page.ARGENPROP=>prop=WebScraper.argenprop(operation)
-      case Page.MELI=>prop=WebScraper.mercadolibre().toSet
       case _=>println("Page not recognized")
     }
     val currentTime=Calendar.getInstance.getTime.getTime
