@@ -1,15 +1,15 @@
 package scraper.etl.utils
 
 object PropertyType extends Enumeration{
-  val DEPARTAMENTO: PropertyType.Value = Value("DEPARTAMENTO")
-  val CASA: PropertyType.Value = Value("CASA")
+  val DEPARTMENT: PropertyType.Value = Value("DEPARTAMENTO")
+  val HOUSE: PropertyType.Value = Value("CASA")
   val PH: PropertyType.Value = Value("PH")
   def fromString(propType: String): PropertyType.Value = {
     propType.toUpperCase() match {
-      case "DEPARTAMENTO" => DEPARTAMENTO
-      case "CASA" => CASA
+      case "DEPARTAMENTO" => DEPARTMENT
+      case "CASA" => HOUSE
       case "PH" => PH
-      case _ => DEPARTAMENTO
+      case _ => DEPARTMENT
     }
   }
 }

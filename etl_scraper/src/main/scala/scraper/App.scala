@@ -1,12 +1,11 @@
 package scraper
 
-import scraper.etl.WebScraper
-import scraper.etl.utils.Operation
+import scraper.etl.{TaskScheduler}
 
 object App extends App{
-  //TaskScheduler.scheduler()
-  WebScraper.argenprop(Operation.RENT)
-  //while (true) {
-    //Thread.sleep(1000)
-  //}
+  TaskScheduler.scheduler()
+
+  while (true) {
+    Thread.sleep(1000)
+  }
 }

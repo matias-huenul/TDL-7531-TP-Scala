@@ -93,8 +93,6 @@ object MeliAPI {
     val attributes = data \ "attributes"
 
     for(attribute <- attributes.children){
-
-
       (attribute \ "id").extract[String] match {
         case "ROOMS" => property.rooms = getValueFromAttribute(attribute)
         case "BEDROOMS" => property.bedrooms = getValueFromAttribute(attribute)

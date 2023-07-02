@@ -4,7 +4,7 @@ import scraper.etl.utils.{Currency, Operation, Page, PropertyType}
 
 class Property(
                 var url: String = "",
-                var propType: PropertyType.Value = PropertyType.DEPARTAMENTO,
+                var propType: PropertyType.Value = PropertyType.DEPARTMENT,
                 var operation: Operation.Value = Operation.RENT,
                 var price: Int = 0,
                 var currency: Currency.Value = Currency.ARS,

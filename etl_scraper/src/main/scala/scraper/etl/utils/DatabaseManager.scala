@@ -36,7 +36,8 @@ object DatabaseManager {
     val connection = getConnection
 
     try {
-      val query = "INSERT INTO properties_"+operation.toString.toLowerCase+" (url, property_type, price, currency, expenses, total_surf, covered_surf, rooms, bedrooms, bathrooms, address, neighborhood, garage, page)" +
+      val query = s"INSERT INTO properties_${operation.toString.toLowerCase} " +
+        "(url, property_type, price, currency, expenses, total_surf, covered_surf, rooms, bedrooms, bathrooms, address, neighborhood, garage, page)" +
         " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
       val statement = connection.prepareStatement(query)
 

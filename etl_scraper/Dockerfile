@@ -11,5 +11,7 @@ RUN unzip sbt-$SBT_VERSION.zip -d ops
 WORKDIR /etl
 ADD . /etl
 
+EXPOSE 8080
+
 RUN /ops/sbt/bin/sbt assembly
 CMD /usr/share/scala/bin/scala "target/scala-2.13/etl_scraper-assembly-1.0.jar"
