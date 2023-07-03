@@ -7,12 +7,12 @@ import java.util.{Timer, TimerTask}
 
 object TaskScheduler{
   private def updateMeli(operation:Operation.Value=Operation.RENT): Unit = {
-    val rentProperties: List[Property] = MeliAPI.getRentPropertiesCABA
+    val rentProperties = MeliAPI.getRentPropertiesCABA
     val startTime=System.currentTimeMillis()
 
     try {
       DB.deletePropertiesWithPage(operation, Page.MELI)
-      DB.insertProperties(rentProperties.toSet, operation)
+      DB.insertProperties(rentProperties, operation)
     } catch {
       case e: Exception => println("Error updating db " + e.printStackTrace())
     }

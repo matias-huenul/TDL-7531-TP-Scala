@@ -17,6 +17,7 @@ import scala.concurrent.{Await, ExecutionContextExecutor}
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 object MeliAPI {
+  val MELI_URL = "https://api.mercadolibre.com"
   implicit val system: ActorSystem = ActorSystem()
   implicit val materializer: Materializer = Materializer(system)
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
@@ -61,7 +62,7 @@ object MeliAPI {
         total.min(1000)
       case Failure(ex) =>
         println(s"Failed to retrieve API response: ${ex.getMessage}")
-        0
+        1000
     }
   }
 
@@ -110,25 +111,22 @@ object MeliAPI {
   /**
    * Get properties publivation by ID from MercadoLibre API
    * @param ids List of IDs to retrieve(have to be ids of properties)
-   * @return List of Properties
+   * @return List of JValue with the API response 200
    */
-  def getByIds(ids: List[String]): List[Property] = {
-    val properties = new ListBuffer[Property]()
+  def getByIds(ids: List[String]): List[JValue] = {
     val groupedIds: List[String] = ids.grouped(20).map(ids => ids.mkString(",")).toList
+    val urls = groupedIds.map(ids => s"$MELI_URL/items?ids=$ids")
 
-    for(groupedId <- groupedIds) {
-      val url = s"https://api.mercadolibre.com/items?ids=$groupedId"
+    urls.flatMap(url => {
       getApiResponse(url) match {
         case Success(apiResponse) =>
           val responseJson = parseJson(apiResponse)
-          for (data <- responseJson.children) {
-            if((data \ "code").extract[Int] == 200) properties += parseProperties(data \ "body")
-          }
+          responseJson.children.filter(data => (data \ "code").extract[Int] == 200)
         case Failure(ex) =>
           println(s"Failed to retrieve API response: ${ex.getMessage}")
+          List()
       }
-    }
-    properties.toList
+    })
   }
 
   /**
@@ -136,7 +134,7 @@ object MeliAPI {
    * Category ID: MLA1459
    * @return List of properties
    */
-  def getRentPropertiesCABA: List[Property] = {
+  def getRentPropertiesCABA: Set[Property] = {
     // Get neighborhoods from wikipedia?
     val neighborhoods: List[String] = List("Agronomia", "Almagro", "Balvanera", "Barracas", "Belgrano", "Boedo", "Caballito",
       "Chacarita", "Coghlan", "Colegiales", "Constitucion", "Flores", "Floresta", "La%20Boca", "La%20Paternal", "Liniers",
@@ -146,8 +144,13 @@ object MeliAPI {
       "Villa%20Devoto", "Villa%20General%20Mitre", "Villa%20Lugano", "Villa%20Luro", "Villa%20Ortuzar", "Villa%20Pueyrredon",
       "Villa%20Real", "Villa%20Riachuelo", "Villa%20Santa%20Rita", "Villa%20Soldati", "Villa%20Urquiza")
 
+    println("Generating links...")
+    val baseUrl = s"$MELI_URL/sites/MLA/search?category=MLA1473"
+    val urls = neighborhoods.flatMap(neighborhood => {
+      val max = getMaxResults(s"$baseUrl&q=$neighborhood")
+      (0 to max by 50).map(offset => s"$baseUrl&q=$neighborhood&offset=$offset")
+    })
 
-    val rentProperties = new ListBuffer[Property]()
     val pb = new ProgressBarBuilder()
       .setInitialMax(neighborhoods.size)
       .setTaskName("Properties from MELI")
@@ -155,29 +158,22 @@ object MeliAPI {
       .setStyle(ProgressBarStyle.ASCII)
       .build()
 
-    for (neighborhood <- neighborhoods) {
-      var max = 0
-      var offset = 0
-      do {
-        val url = s"https://api.mercadolibre.com/sites/MLA/search?category=MLA1473&q=$neighborhood&offset=$offset"
-        if (max == 0) max = getMaxResults(url)
-        getApiResponse(url) match {
-          case Success(apiResponse) =>
-            val data = parseJson(apiResponse)
-            val ids = getIds(data \ "results")
-            val props = getByIds(ids)
-
-            // Add properties to list that arent already in it by url
-            props.foreach(prop => if(!rentProperties.exists(_.url == prop.url)) rentProperties += prop)
-          case Failure(ex) =>
-            println(s"Failed to retrieve API response: ${ex.getMessage}")
-        }
-        offset += 50
-      }while (offset <= max)
+    val properties = urls.flatMap(url => {
       pb.step()
-    }
+      getApiResponse(url) match {
+        case Success(apiResponse) =>
+          val data = parseJson(apiResponse)
+          val ids = getIds(data \ "results")
+          getByIds(ids).map(data => parseProperties(data \ "body"))
+        case Failure(ex) =>
+          println(s"Failed to retrieve API response: ${ex.getMessage}")
+          List[Property]()
+      }
+    }).toSet
+
+
     pb.close()
     system.terminate()
-    rentProperties.toList
+    properties
   }
 }
