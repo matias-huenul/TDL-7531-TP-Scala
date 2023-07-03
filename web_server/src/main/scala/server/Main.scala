@@ -4,9 +4,9 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
 
-import example.lib.Telegram
-import example.lib.Commands
-import example.lib.Database
+import server.lib.Telegram
+import server.lib.Commands
+import server.lib.Database
 
 object Main extends App {
   implicit val system = ActorSystem("main")
@@ -20,10 +20,9 @@ object Main extends App {
       entity(as[String]) { body =>
         complete {
           Telegram.parseMessage(body) match {
-            case Some((chatId, text)) =>
-              Commands.handleMessage(text).flatMap { responseMessage =>
-                Telegram.sendMessage(chatId, responseMessage).map { response =>
-                  response.discardEntityBytes()
+            case Some(message) =>
+              Commands.handleMessage(message.text).flatMap { responseMessage =>
+                Telegram.sendMessage(message.chatId, responseMessage).map { response =>
                   StatusCodes.OK
                 }
               }.recover {
