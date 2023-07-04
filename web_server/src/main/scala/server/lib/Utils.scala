@@ -1,4 +1,4 @@
-package example.lib
+package server.lib
 
 import akka.actor.ActorSystem
 import org.json4s._
@@ -30,7 +30,7 @@ object Utils {
   )(implicit ec: ExecutionContext): Future[JValue] = {
     val request = HttpRequest(
       method = method,
-      uri = url,
+      uri = url.replace(" ", "%20"),
       entity = HttpEntity(ContentTypes.`application/json`, body),
       headers = headers
     )

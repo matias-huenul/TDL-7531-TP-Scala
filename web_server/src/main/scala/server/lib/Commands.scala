@@ -1,4 +1,4 @@
-package example.lib
+package server.lib
 
 import akka.actor.ActorSystem
 import org.json4s._
@@ -10,9 +10,6 @@ import akka.http.scaladsl.Http
 import akka.stream.Materializer
 import scala.concurrent.ExecutionContext
 import java.text.NumberFormat
-
-import example.lib.Database
-import example.lib.Utils
 
 object Commands {
   implicit val system = ActorSystem("commands")
@@ -92,16 +89,19 @@ object Commands {
         |
         |/buscar - Buscar propiedades en venta o alquiler
         |  *Parámetros:*
-        |    - ubicacion: Ubicación de la propiedad
-        |    - tipo: Tipo de propiedad (casa, departamento, ph)
+        |    - tipo: Tipo de propiedad (casa, departamento)
         |    - operacion: Tipo de operación (venta, alquiler)
+        |    - ubicacion: Ubicación de la propiedad
+        |    - ambientes: Cantidad de ambientes
+        |    - precio: Precio de la propiedad
         |  *Ejemplo de uso:*
         |    /buscar ubicacion=Palermo, operacion=venta
         |
         |/tasar - Obtener un valor estimado de tu propiedad
         |  *Parámetros:*
+        |    - tipo: Tipo de propiedad (casa, departamento)
         |    - ubicacion: Ubicación de la propiedad
-        |    - tipo: Tipo de propiedad (casa, departamento, ph)
+        |    - ambientes: Cantidad de ambientes
         |    - superficie: Superficie de la propiedad
         |  *Ejemplo de uso:*
         |    /tasar ubicacion=Palermo, tipo=departamento, superficie=50""".stripMargin
