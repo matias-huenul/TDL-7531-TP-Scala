@@ -1,12 +1,11 @@
 package scraper
 
-import scraper.etl.{MeliAPI, TaskScheduler}
+import scraper.etl.TaskScheduler
 
 object App extends App{
-  MeliAPI.getRentPropertiesCABA
-  /*TaskScheduler.scheduler()
+  TaskScheduler.scheduler()
 
   while (true) {
     Thread.sleep(1000)
-  }*/
+  }
 }

@@ -13,10 +13,11 @@ import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
 import me.tongfei.progressbar._
 
+import scala.jdk.CollectionConverters.MapHasAsJava
+
 object WebScraper{
   private val URL_ARGENPROP="https://www.argenprop.com"
   private val URL_ZONAPROP="https://www.zonaprop.com.ar"
-  val USER_AGENT="Mozilla/5.0 (X11; Linux x86_64; rv:107.0) Gecko/20100101 Firefox/107.0"
 
   /**
    * Builds a progress bar
@@ -47,10 +48,16 @@ object WebScraper{
   private def getUrlsZonaprop(operation:Operation.Value):List[String]={
     val baseUrl=URL_ZONAPROP+"/casas-departamentos-ph-"+ Operation.toSpanishString(operation) + "-capital-federal"
 
-    val doc = JsoupBrowser().get(baseUrl+".html")
-    val  maxPages=(toNumber((doc>>texts("h1")).head)/20)+1
-    val URLs = (1 to maxPages).map(i=> baseUrl + (if(i==1) "" else "-pagina-"+ i) +".html")
-    URLs.toList
+    try{
+      val doc = JsoupBrowser().get(baseUrl+".html")
+      val maxPages = (toNumber((doc>>texts("h1")).head)/20)+1
+      val URLs = (1 to maxPages).map(i=> baseUrl + (if(i==1) "" else "-pagina-"+ i) +".html")
+      URLs.toList
+    }catch {
+      case e: Exception =>
+        println(e.getMessage)
+        List()
+    }
   }
 
   /**

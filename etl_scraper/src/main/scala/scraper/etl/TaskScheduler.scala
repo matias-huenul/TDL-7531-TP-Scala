@@ -50,7 +50,7 @@ object TaskScheduler{
    * Every 30 days for Sale
    */
   def scheduler()={
-    // Schedule to update the db every 7 days for Alquiler
+    // Schedule to update the db every 7 days for Rent
     val schedulerRent=new Timer()
     val taskRent = new TimerTask {
       def run(): Unit = {
@@ -62,15 +62,15 @@ object TaskScheduler{
 
     schedulerRent.schedule(taskRent,0L,1000L*60L*60L*24L*7L)
 
-    // Schedule to update the db every 30 days for Ventas
+    // Schedule to update the db every 30 days for Sale
     val schedulerSale=new Timer()
     val taskSale=new TimerTask{
       def run(): Unit ={
         updateDB(Operation.SALE,Page.ARGENPROP)
-        //updateDB(Operation.SALE,Page.ZONAPROP)
+        updateDB(Operation.SALE,Page.ZONAPROP)
       }
     }
-    //schedulerSale.schedule(taskSale,1000L*60L*20L,1000L*60L*60L*24L*30L)
+    schedulerSale.schedule(taskSale,1000L*60L*30L,1000L*60L*60L*24L*30L)
   }
 
 }
