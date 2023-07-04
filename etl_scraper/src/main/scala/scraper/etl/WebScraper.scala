@@ -1,19 +1,14 @@
 package scraper.etl
 
-import scraper.etl.model.Property
-import scraper.etl.utils.{Operation, Page}
+import me.tongfei.progressbar._
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
 import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
 import net.ruippeixotog.scalascraper.dsl.DSL._
 import net.ruippeixotog.scalascraper.model.Element
 import org.json4s._
 import org.json4s.native.JsonMethods._
-import org.jsoup._
-import org.jsoup.nodes.Document
-import org.jsoup.select.Elements
-import me.tongfei.progressbar._
-
-import scala.jdk.CollectionConverters.MapHasAsJava
+import scraper.etl.model.Property
+import scraper.etl.utils.{Operation, Page}
 
 object WebScraper{
   private val URL_ARGENPROP="https://www.argenprop.com"

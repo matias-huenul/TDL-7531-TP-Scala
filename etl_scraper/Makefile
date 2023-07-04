@@ -3,14 +3,11 @@ all: start run
 start:
 	docker compose up -d
 
-assembly:
-	docker compose exec scala bash -c "source ~/.sdkman/bin/sdkman-init.sh && sbt assembly"
-
 run:
-	docker compose exec scala bash -c "source ~/.sdkman/bin/sdkman-init.sh && sbt run"
+	docker compose exec scala bash -c "/usr/share/scala/bin/scala target/scala-2.13/etl_scraper-assembly-1.0.jar"
 
-clean:
-	docker compose exec scala bash -c "source ~/.sdkman/bin/sdkman-init.sh && sbt clean"
+runSbt:
+	docker compose exec scala bash -c "/ops/sbt/bin/sbt run"
 
 stop:
 	docker compose down

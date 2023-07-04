@@ -152,9 +152,9 @@ object MeliAPI {
     })
 
     val pb = new ProgressBarBuilder()
-      .setInitialMax(neighborhoods.size)
+      .setInitialMax(urls.size)
       .setTaskName("Properties from MELI")
-      .setUnit(" neighborhood", 1)
+      .setUnit(" url", 1)
       .setStyle(ProgressBarStyle.ASCII)
       .build()
 
