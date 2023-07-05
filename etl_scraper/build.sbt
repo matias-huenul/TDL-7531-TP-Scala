@@ -19,7 +19,8 @@ lazy val root = (project in file("."))
     libraryDependencies += "me.tongfei" % "progressbar" % "0.9.5",
     libraryDependencies += "com.typesafe.akka" %% "akka-http" % "10.5.0",
     libraryDependencies += "com.typesafe.akka" %% "akka-actor"    % "2.8.0",
-    libraryDependencies += "com.typesafe.akka" %% "akka-stream"    % "2.8.0"
+    libraryDependencies += "com.typesafe.akka" %% "akka-stream"    % "2.8.0",
+    libraryDependencies += "com.lihaoyi" %% "upickle" % "3.1.0"
   )
 
 ThisBuild / assemblyMergeStrategy := {
