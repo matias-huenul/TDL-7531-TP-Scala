@@ -1,20 +1,17 @@
 package scraper.etl
 
-import upickle.default._
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
+import me.tongfei.progressbar.{ProgressBarBuilder, ProgressBarStyle}
+import org.json4s.DefaultFormats
 import scraper.etl.model.Property
 import scraper.etl.utils.{Currency, Page}
-import me.tongfei.progressbar.{ProgressBarBuilder, ProgressBarStyle}
-import org.json4s.native.parseJson
-import org.json4s.{DefaultFormats, JValue}
 
-import scala.collection.mutable.ListBuffer
-import scala.concurrent.{Await, ExecutionContextExecutor}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContextExecutor}
 import scala.util.{Failure, Success, Try}
 object MeliAPI {
   val MELI_URL = "https://api.mercadolibre.com"
@@ -47,6 +44,11 @@ object MeliAPI {
     data.arr.map(x => x("id").str).toList
   }
 
+  /**
+   * Gets the maximum number of results from the API response
+   * @param url: String with the url to get the API response
+   * @return number of results
+   */
   private def getMaxResults(url: String): Int = {
     getApiResponse(url) match {
       case Success(apiResponse) =>
@@ -60,9 +62,14 @@ object MeliAPI {
     }
   }
 
+  /**
+   * Get the value from the attribute. If the attribute is not found, return 0
+   * @param attribute: Json object of the attribute
+   * @return Value from the attribute
+   */
   private def getValueFromAttribute(attribute: ujson.Value): Int = {
-    val value = attribute("value_name").strOpt.getOrElse("0").replaceAll("[^0-9]","")
-    value.toInt
+    val value = attribute("value_name").strOpt.getOrElse("0")
+    value.replaceAll("[^0-9]","").toInt
   }
 
   /**
@@ -70,7 +77,7 @@ object MeliAPI {
    * @param data: JValue API response
    * @return Property
    */
-  def parseProperties(data:ujson.Value): Property ={
+  private def parseProperties(data:ujson.Value): Property ={
     val property = new Property()
     property.url = data("permalink").str
     property.price = data("price").num.toInt
@@ -124,13 +131,13 @@ object MeliAPI {
    */
   def getRentPropertiesCABA: Set[Property] = {
     // Get neighborhoods from wikipedia?
-    val neighborhoods: List[String] = List("Agronomia", "Almagro") /*"Balvanera", "Barracas", "Belgrano", "Boedo", "Caballito",
+    val neighborhoods: List[String] = List("Agronomia", "Almagro","Balvanera", "Barracas", "Belgrano", "Boedo", "Caballito",
       "Chacarita", "Coghlan", "Colegiales", "Constitucion", "Flores", "Floresta", "La%20Boca", "La%20Paternal", "Liniers",
       "Mataderos", "Monte%20Castro", "Monserrat", "Nueva%20Pompeya", "Nunez", "Palermo", "Parque%20Avellaneda", "Parque%20Chacabuco",
       "Parque%20Chas", "Parque%20Patricios", "Puerto%20Madero", "Recoleta", "Retiro", "Saavedra", "San%20Cristobal",
       "San%20Nicolas", "San%20Telmo", "Velez%20Sarsfield", "Versalles", "Villa%20Crespo", "Villa%20del%20Parque",
       "Villa%20Devoto", "Villa%20General%20Mitre", "Villa%20Lugano", "Villa%20Luro", "Villa%20Ortuzar", "Villa%20Pueyrredon",
-      "Villa%20Real", "Villa%20Riachuelo", "Villa%20Santa%20Rita", "Villa%20Soldati", "Villa%20Urquiza")*/
+      "Villa%20Real", "Villa%20Riachuelo", "Villa%20Santa%20Rita", "Villa%20Soldati", "Villa%20Urquiza")
 
     println("Generating links...")
     val baseUrl = s"$MELI_URL/sites/MLA/search?category=MLA1473"
@@ -150,11 +157,8 @@ object MeliAPI {
       pb.step()
       getApiResponse(url) match {
         case Success(apiResponse) =>
-          val test = ujson.read(apiResponse)
-          //val test2 = test("results")
-          //val test3= test2.arr
-          //val data = parseJson(apiResponse)
-          val ids = getIds(test("results"))
+          val json = ujson.read(apiResponse)
+          val ids = getIds(json("results"))
           getByIds(ids).map(x => parseProperties(x("body")))
         case Failure(ex) =>
           println(s"Failed to retrieve API response: ${ex.getMessage}")
