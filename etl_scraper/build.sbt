@@ -7,7 +7,7 @@ ThisBuild / organizationName := "etl"
 
 lazy val root = (project in file("."))
   .settings(
-    name := "sample",
+    name := "etl_scraper",
     libraryDependencies += "org.scalaj" %% "scalaj-http" % "2.4.2",
     libraryDependencies += "org.json4s" %% "json4s-native" % "4.0.6",
     libraryDependencies += "org.apache.spark" %% "spark-core" % "3.4.0" % "provided",
@@ -17,14 +17,14 @@ lazy val root = (project in file("."))
     libraryDependencies += "org.jsoup" % "jsoup" % "1.15.4",
     libraryDependencies += "net.ruippeixotog" %% "scala-scraper" % "3.1.0",
     libraryDependencies += "me.tongfei" % "progressbar" % "0.9.5",
-    libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.4.7",
-    libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5",
     libraryDependencies += "com.typesafe.akka" %% "akka-http" % "10.5.0",
     libraryDependencies += "com.typesafe.akka" %% "akka-actor"    % "2.8.0",
-    libraryDependencies += "com.typesafe.akka" %% "akka-stream"    % "2.8.0"
+    libraryDependencies += "com.typesafe.akka" %% "akka-stream"    % "2.8.0",
+    libraryDependencies += "com.lihaoyi" %% "upickle" % "3.1.0"
   )
 
-assemblyMergeStrategy in assembly := {
+ThisBuild / assemblyMergeStrategy := {
+  case PathList("reference.conf") => MergeStrategy.concat
   case PathList("META-INF", xs @ _*) => MergeStrategy.discard
   case x => MergeStrategy.first
 }

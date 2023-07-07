@@ -1,10 +1,10 @@
-package etl
+package scraper.etl.model
 
-import etl.utils.{Currency, Operation, Page, PropertyType}
+import scraper.etl.utils.{Currency, Operation, Page, PropertyType}
 
 class Property(
                 var url: String = "",
-                var propType: PropertyType.Value = PropertyType.DEPARTAMENTO,
+                var propType: PropertyType.Value = PropertyType.DEPARTMENT,
                 var operation: Operation.Value = Operation.RENT,
                 var price: Int = 0,
                 var currency: Currency.Value = Currency.ARS,
@@ -18,7 +18,12 @@ class Property(
                 var neighborhood: String = "",
                 var garage: Int = 0,
                 var page: Page.Value = Page.ZONAPROP) {
+  override def equals(other: Any): Boolean = other match {
+    case that: Property => this.url == that.url
+    case _ => false
+  }
 
+  override def hashCode: Int = url.hashCode
   def setOperation(s: String): Unit = {
     operation = Operation.fromString(s)
   }
