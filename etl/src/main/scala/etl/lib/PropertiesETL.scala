@@ -5,38 +5,8 @@ import org.apache.spark.SparkFiles
 import org.apache.spark.sql.functions.{regexp_extract, regexp_replace, when, lower, col, substring_index, udf, to_date}
 import org.apache.spark.sql.types.{FloatType, IntegerType, StringType}
 
-// import scalaj.http._
-
-/*import org.json4s._
-import org.json4s.native.Serialization._
-import org.json4s.native.Serialization*/
-
 object PropertiesETL {
-    //implicit val formats = Serialization.formats(NoTypeHints)
-
-    def updateLoadedColumn(url: String, fileName: String, value: String): Unit = {
-        //val apiUrl: String = sys.env("SUPABASE_API_URL")
-        //val baseUrl: String = s"$apiUrl/rest/v1/rpc/update_loaded_col"
-        //val newValues: Map[String, String] = Map("_url" -> s"$url", "_value" -> s"$value")
-        Utils.updateLoadedColumn(url, fileName, value)
-        
-        /*val response: HttpResponse[String] = Http(baseUrl)
-          .method("POST")
-          .header("apikey", sys.env("SUPABASE_API_KEY"))
-          .header("prefer", "return=representation")
-          .header("Content-Type", "application/json")
-          .postData(write(newValues))
-          .asString
-        
-        //extracting the status code from the response
-        val statusCode: Int = response.code
-        if (statusCode == 204) {
-          println(s"Success on updating loaded column for $fileName")
-        } else {
-          println(s"Error on updating loaded column for $fileName")
-        }*/
-    }
-
+    val databseFilesName: String = sys.env("DATABASE_CSVS")
     def propertiesDataUpdate(): Unit = {
         val spark: SparkSession = SparkSession.builder()
             .appName("Example")
@@ -45,18 +15,19 @@ object PropertiesETL {
             .getOrCreate()
         import spark.implicits._
         
-        println("Reading csv table")
+        println(s"Reading $databseFilesName table")
         val uploadedCsv: DataFrame = spark.read
             .format("jdbc")
             .option("driver", "org.postgresql.Driver")
             .option("url", sys.env("DATABASE_URL"))
-            .option("dbtable", sys.env("DATABASE_CSVS"))
+            .option("dbtable", databseFilesName)
             .option("user", sys.env("DATABASE_USER"))
             .option("password", sys.env("DATABASE_PASSWORD"))
             .load()
         
-        // TODO: cambiar a false
-        val notLoadedFiles: DataFrame = uploadedCsv.filter(col("loaded") === true)
+        /*// TODO: change to false
+        Para la demo de como se actualiza la tabla en supabase
+        val notLoadedFiles: DataFrame = uploadedCsv.filter(col("loaded") === false)
 
         if (notLoadedFiles.count() != 0) {
           val csvToLoad: Seq[(String, String)] = notLoadedFiles.select("url", "file_name").as[(String, String)].collect()
@@ -65,14 +36,12 @@ object PropertiesETL {
             val url: String = x._1
             val fileName: String = x._2
             
-            val databseName: String = sys.env("DATABASE_CSVS")
-            println(s"Updating $databseName table")
-            // TODO: cambiar a true
-            updateLoadedColumn(url, fileName, "false")
+            // TODO: change to true
+            Utils.updateLoadedColumn(url, fileName, "true")
           })
-        }
+        }*/
 
-        /*if (notLoadedFiles.count() != 0) {
+        if (notLoadedFiles.count() != 0) {
             val csvToLoad: Seq[(String, String)] = notLoadedFiles.select("url", "file_name").as[(String, String)].collect()
 
             println("Loading csv files")
@@ -91,14 +60,13 @@ object PropertiesETL {
                     .option("password", sys.env("DATABASE_PASSWORD"))
                     .save()
                 
-                val databseName: String = sys.env("DATABASE_CSVS")
-                println(s"Updating $databseName table")
-                updateLoadedColumn(url, fileName, "true")
+                println(s"Updating $databseFilesName table")
+                Utils.updateLoadedColumn(url, fileName, "true")
             })
             
         } else {
             println("There are no files to load")
-        }*/
+        }
   }
 
     def calculate_bedrooms(rooms_qty: String): Int = {

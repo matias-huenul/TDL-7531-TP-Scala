@@ -31,15 +31,15 @@ object Utils {
       Authorization(OAuth2BearerToken(supabaseApiKey)),
     )
 
-    makeHttpRequest(baseUrl, HttpMethods.POST, write(newValues), headers)
-    system.terminate()
+    makeHttpRequest(baseUrl, HttpMethods.POST, write(newValues), headers, fileName)
   }
 
   def makeHttpRequest(
     url: String,
     method: HttpMethod,
     body: String,
-    headers: List[HttpHeader]
+    headers: List[HttpHeader],
+    fileName: String
   ): Unit = {
     val request = HttpRequest(
       method = method,
@@ -54,8 +54,15 @@ object Utils {
       case Success(response) => 
         val statusCode: StatusCode = response.status
         val code: Int = statusCode.intValue
-        println(s"Status Code: $code")
-      case Failure(ex) => println(s"Request failed with exception: $ex")
+        if (code == 204) {
+          println(s"Success on updating loaded column for $fileName")
+        } else {
+          println(s"Error on updating loaded column for $fileName")
+        }
+        system.terminate()
+      case Failure(ex) => 
+        println(s"Request failed with exception: $ex")
+        system.terminate()
     }
   }
 }
