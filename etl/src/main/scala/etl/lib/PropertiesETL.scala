@@ -41,6 +41,8 @@ object PropertiesETL {
           })
         }*/
 
+        val notLoadedFiles: DataFrame = uploadedCsv.filter(col("loaded") === false)
+
         if (notLoadedFiles.count() != 0) {
             val csvToLoad: Seq[(String, String)] = notLoadedFiles.select("url", "file_name").as[(String, String)].collect()
 
