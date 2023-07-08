@@ -184,7 +184,8 @@ object PropertiesETL {
 
         val finalDf = convertedDf.select(to_date(col("created_on"),"yyyy-MM-dd").alias("created_on"), 
             col("l3").alias("neighborhood"), col("rooms"), col("bedrooms"), col("surface_covered"), 
-            col("surface_total"), col("price"), col("currency"), col("property_type"), col("operation_type"))
+            col("bathrooms"), col("surface_total"), col("price"), col("currency"), col("property_type"), 
+            col("operation_type"))
 
         val definitiveDF = finalDf.na.drop()
 
