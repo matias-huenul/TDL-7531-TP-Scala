@@ -1,25 +1,26 @@
-package example
+package etl.lib
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.SparkFiles
 import org.apache.spark.sql.functions.{regexp_extract, regexp_replace, when, lower, col, substring_index, udf, to_date}
 import org.apache.spark.sql.types.{FloatType, IntegerType, StringType}
 
-import scalaj.http._
+// import scalaj.http._
 
-import org.json4s._
+/*import org.json4s._
 import org.json4s.native.Serialization._
-import org.json4s.native.Serialization
+import org.json4s.native.Serialization*/
 
 object PropertiesETL {
-    implicit val formats = Serialization.formats(NoTypeHints)
+    //implicit val formats = Serialization.formats(NoTypeHints)
 
     def updateLoadedColumn(url: String, fileName: String, value: String): Unit = {
-        val apiUrl: String = sys.env("SUPABASE_API_URL")
-        val baseUrl: String = s"$apiUrl/rest/v1/rpc/update_loaded_col"
-        val newValues: Map[String, String] = Map("_url" -> s"$url", "_value" -> s"$value")
+        //val apiUrl: String = sys.env("SUPABASE_API_URL")
+        //val baseUrl: String = s"$apiUrl/rest/v1/rpc/update_loaded_col"
+        //val newValues: Map[String, String] = Map("_url" -> s"$url", "_value" -> s"$value")
+        Utils.updateLoadedColumn(url, fileName, value)
         
-        val response: HttpResponse[String] = Http(baseUrl)
+        /*val response: HttpResponse[String] = Http(baseUrl)
           .method("POST")
           .header("apikey", sys.env("SUPABASE_API_KEY"))
           .header("prefer", "return=representation")
@@ -33,7 +34,7 @@ object PropertiesETL {
           println(s"Success on updating loaded column for $fileName")
         } else {
           println(s"Error on updating loaded column for $fileName")
-        }
+        }*/
     }
 
     def propertiesDataUpdate(): Unit = {
@@ -54,9 +55,24 @@ object PropertiesETL {
             .option("password", sys.env("DATABASE_PASSWORD"))
             .load()
         
-        val notLoadedFiles: DataFrame = uploadedCsv.filter(col("loaded") === false)
+        // TODO: cambiar a false
+        val notLoadedFiles: DataFrame = uploadedCsv.filter(col("loaded") === true)
 
         if (notLoadedFiles.count() != 0) {
+          val csvToLoad: Seq[(String, String)] = notLoadedFiles.select("url", "file_name").as[(String, String)].collect()
+
+          csvToLoad.foreach(x => {
+            val url: String = x._1
+            val fileName: String = x._2
+            
+            val databseName: String = sys.env("DATABASE_CSVS")
+            println(s"Updating $databseName table")
+            // TODO: cambiar a true
+            updateLoadedColumn(url, fileName, "false")
+          })
+        }
+
+        /*if (notLoadedFiles.count() != 0) {
             val csvToLoad: Seq[(String, String)] = notLoadedFiles.select("url", "file_name").as[(String, String)].collect()
 
             println("Loading csv files")
@@ -82,7 +98,7 @@ object PropertiesETL {
             
         } else {
             println("There are no files to load")
-        }
+        }*/
   }
 
     def calculate_bedrooms(rooms_qty: String): Int = {
