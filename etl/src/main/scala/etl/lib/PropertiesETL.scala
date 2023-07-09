@@ -148,17 +148,6 @@ object PropertiesETL {
               )
         }
 
-        // Fillna currency
-        val dfCurrency = columns.foldLeft(dfBedooms) { (accDF, column) =>
-              accDF.withColumn("currency",
-                when($"currency".isNull && col(column).contains("USD"), 
-                    substring_index(regexp_extract(col(column), " USD ", 0), " ", 1).cast(IntegerType))
-                  .otherwise(when($"currency".isNull && col(column).contains("ARS"),
-                    substring_index(regexp_extract(col(column), " ARS ", 0), " ", 1).cast(IntegerType))
-                    .otherwise($"currency"))
-              )
-        }
-
         val newColumnsTypes = Map(
             "rooms" -> IntegerType,
             "bathrooms" -> IntegerType,
@@ -167,7 +156,7 @@ object PropertiesETL {
             "surface_total" -> FloatType,
             "price" -> IntegerType)
     
-        val convertedDf = newColumnsTypes.foldLeft(dfCurrency) { case (accDF, (columnName, newType)) =>
+        val convertedDf = newColumnsTypes.foldLeft(dfBedooms) { case (accDF, (columnName, newType)) =>
             accDF.withColumn(columnName, accDF(columnName).cast(newType))
         }
 
