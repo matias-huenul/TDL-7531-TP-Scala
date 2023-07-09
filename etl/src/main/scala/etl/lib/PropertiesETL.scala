@@ -99,7 +99,7 @@ object PropertiesETL {
         val dfCleanDesc = filteredDF.withColumn("description", regexp_replace($"description", "\n", " "))
 
         // Fillna for surface_total
-        val updatedDF = columns.foldLeft(dfCleanDesc) { (accDF, column) =>
+        val dfSurfaceTotal = columns.foldLeft(dfCleanDesc) { (accDF, column) =>
               accDF.withColumn("surface_total",
                 when($"surface_total".isNull && lower(col(column)).contains("superficie total:"), 
                   substring_index(regexp_extract(lower(col(column)), "superficie total: \\d+", 0), " ", 1).cast(IntegerType))
@@ -110,19 +110,8 @@ object PropertiesETL {
               )
         }
 
-        // Fillna for surface_covered
-        val dfSurfaceCovered = columns.foldLeft(updatedDF) { (accDF, column) =>
-              accDF.withColumn("surface_covered",
-                when($"surface_covered".isNull && lower(col(column)).contains("superficie cubierta:"), 
-                    substring_index(regexp_extract(lower(col(column)), "superficie cubierta: \\d+", 0), " ", 1).cast(IntegerType))
-                  .otherwise(when($"surface_covered".isNull && lower(col(column)).contains("sup. cubierta:"),
-                    substring_index(regexp_extract(lower(col(column)), "sup. cubierta: \\d+", 0), " ", 1).cast(IntegerType))
-                    .otherwise($"surface_covered"))
-              )
-        }
-
         // Fillna for bathrooms
-        val dfBathroom = columns.foldLeft(dfSurfaceCovered) { (accDF, column) =>
+        val dfBathroom = columns.foldLeft(dfSurfaceTotal) { (accDF, column) =>
               accDF.withColumn("bathrooms",
                 when($"bathrooms".isNull && lower(col(column)).contains("baño"), 
                     substring_index(regexp_extract(lower(col(column)), "\\d+ baños?", 0), " ", 1).cast(IntegerType))
