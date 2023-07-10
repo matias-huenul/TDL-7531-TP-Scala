@@ -69,7 +69,7 @@ object MeliAPI {
    */
   private def getValueFromAttribute(attribute: ujson.Value): Int = {
     val value = attribute("value_name").strOpt.getOrElse("0")
-    value.replaceAll("[^0-9]","").toInt
+    try {value.replaceAll("[^0-9]","").toInt} catch {case _: Throwable => 0} //In case the value is too big
   }
 
   /**
@@ -87,6 +87,7 @@ object MeliAPI {
     property.page = Page.MELI
 
     val attributes = data("attributes")
+
 
     for(attribute <- attributes.arr){
       attribute("id").str match {
